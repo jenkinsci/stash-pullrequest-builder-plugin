@@ -27,7 +27,7 @@ import static java.lang.String.format;
 @SuppressFBWarnings("WMI_WRONG_MAP_ITERATOR")
 public class StashRepository {
     private static final Logger logger = Logger.getLogger(StashRepository.class.getName());
-    public static final String BUILD_START_MARKER = "[*BuildStarted* **%s**] %s into %s";
+    public static final String BUILD_START_MARKER = "[*BuildStarted* **%s**] %s into %s %n%nBuild will be started at %s";
     public static final String BUILD_FINISH_MARKER = "[*BuildFinished* **%s**] %s into %s";
 
     public static final String BUILD_START_REGEX = "\\[\\*BuildStarted\\* \\*\\*%s\\*\\*\\] ([0-9a-fA-F]+) into ([0-9a-fA-F]+)";
@@ -79,10 +79,14 @@ public class StashRepository {
         return targetPullRequests;
     }
 
-    public String postBuildStartCommentTo(StashPullRequestResponseValue pullRequest) {
+    public String postBuildStartCommentTo(StashPullRequestResponseValue pullRequest, String projectURL) {
             String sourceCommit = pullRequest.getFromRef().getLatestCommit();
             String destinationCommit = pullRequest.getToRef().getLatestCommit();
-            String comment = format(BUILD_START_MARKER, builder.getProject().getDisplayName(), sourceCommit, destinationCommit);
+            String comment = format(BUILD_START_MARKER,
+                    builder.getProject().getDisplayName(),
+                    sourceCommit,
+                    destinationCommit,
+                    projectURL);
             StashPullRequestComment commentResponse = this.client.postPullRequestComment(pullRequest.getId(), comment);
             return commentResponse.getCommentId().toString();
     }
@@ -148,7 +152,8 @@ public class StashRepository {
                 if (trigger.getDeletePreviousBuildFinishComments()) {
                     deletePreviousBuildFinishedComments(pullRequest);
                 }
-            String commentId = postBuildStartCommentTo(pullRequest);
+                String projectURL = this.builder.getProject().getAbsoluteUrl();
+            String commentId = postBuildStartCommentTo(pullRequest, projectURL);
             StashCause cause = new StashCause(
                     trigger.getStashHost(),
                     pullRequest.getFromRef().getBranch().getName(),
@@ -165,7 +170,6 @@ public class StashRepository {
                     pullRequest.getVersion(),
                     additionalParameters);
             this.builder.getTrigger().startJob(cause);
-
         }
     }
 
@@ -248,11 +252,12 @@ public class StashRepository {
     private boolean isBuildTarget(StashPullRequestResponseValue pullRequest) {
 
         boolean shouldBuild = true;
+        boolean shouldSkipByTitle = false;
 
         if (pullRequest.getState() != null && pullRequest.getState().equals("OPEN")) {
             if (isSkipBuild(pullRequest.getTitle())) {
                 logger.info("Skipping PR: " + pullRequest.getId() + " as title contained skip phrase");
-                return false;
+                shouldSkipByTitle = true;
             }
 
             if (!isForTargetBranch(pullRequest)) {
@@ -288,6 +293,16 @@ public class StashRepository {
                     String content = comment.getText();
                     if (content == null || content.isEmpty()) {
                         continue;
+                    }
+
+                    if (isPhrasesContain(content, this.trigger.getCiBuildPhrases())) {
+                        shouldBuild = true;
+                        logger.info("Should build: " + pullRequest.getId() + " by phrase");
+                        break;
+                    }
+
+                    if (shouldSkipByTitle) {
+                        shouldBuild = false;
                     }
 
                     //These will match any start or finish message -- need to check commits
@@ -329,11 +344,8 @@ public class StashRepository {
                         }
                     }
 
-                    if(isSkipBuild(content)) {
+                    if (isSkipBuild(content)) {
                         shouldBuild = false;
-                        break;
-                    } if (isPhrasesContain(content, this.trigger.getCiBuildPhrases())) {
-                        shouldBuild = true;
                         break;
                     }
                 }
