@@ -4,6 +4,7 @@ import hudson.model.AbstractBuild;
 import hudson.model.Cause;
 import hudson.model.Result;
 import hudson.model.TaskListener;
+import jenkins.model.Jenkins;
 import jenkins.model.JenkinsLocationConfiguration;
 
 import java.io.IOException;
@@ -49,15 +50,22 @@ public class StashBuilds {
             return;
         }
         Result result = build.getResult();
-        JenkinsLocationConfiguration globalConfig = new JenkinsLocationConfiguration();
-        String rootUrl = globalConfig.getUrl();
-        String buildUrl = "";
-        if (rootUrl == null) {
-            buildUrl = " PLEASE SET JENKINS ROOT URL FROM GLOBAL CONFIGURATION " + build.getUrl();
+        // JenkinsLocationConfiguration globalConfig = new JenkinsLocationConfiguration();
+        String rootUrl = "";
+        String buildUrl;
+        Jenkins jenkinsInstance = Jenkins.getInstance();
+        if (jenkinsInstance != null ){
+            rootUrl = jenkinsInstance.getRootUrl();
+            if (!rootUrl.isEmpty()){
+                buildUrl = rootUrl + build.getUrl();
+            }else{
+                buildUrl = "Jenkins instance root URL is empty "+ build.getUrl();
+            }
+        }else{
+            buildUrl = "Jenkins instance is NULL "+ build.getUrl();
         }
-        else {
-            buildUrl = rootUrl + build.getUrl();
-        }
+
+        logger.info("StashBuilds: rootUrl: " + rootUrl + ", buildUrl: " + buildUrl);
         repository.deletePullRequestComment(cause.getPullRequestId(), cause.getBuildStartCommentId());
 
         String additionalComment = "";
