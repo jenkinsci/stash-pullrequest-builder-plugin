@@ -34,9 +34,9 @@ The plugin makes available to the job the following parameter variables:
 
 Select *Git* then configure:
 
-- **Repository URL**: `git@example.com:/${destinationRepositoryOwner}/${destinationRepositoryName}.git`
-- **Advance -> Refspec**: `+refs/pull-requests/*:refs/remotes/origin/pr/*`
-- **Branch Specifier**: `origin/pr/${pullRequestId}/from`
+- **Repository URL**: `git@example.com:/${sourceRepositoryOwner}/${sourceRepositoryName}.git`
+- **Advanced -> Refspec**: `+refs/pull-requests/${pullRequestId}/*:refs/remotes/origin/pr/${pullRequestId}/*`
+- **Branch Specifier**: `${sourceCommitHash}`
 
 **Build Triggers**
 
@@ -52,7 +52,7 @@ Select *Stash Pull Request Builder* then configure:
 - Ignore ssl certificates:
 - Build PR targeting only these branches: common separated list of branch names (or regexes). Blank for all.
 - Rebuild if destination branch changes:
-- Build only if Stash reports no conflicts: this should be set if using the merge branch to avoid issues with out of date merge branch in stash
+- Build only if Stash reports no conflicts: this should be set if using the merge branch to avoid issues with out-of-date merge branch in Stash
 - Build only if PR is mergeable (note this will stop the PR being built if you have required approvers limit set >0 and the PR hasn't been approved)
 - Cancel outdated jobs
 - CI Skip Phrases: default: "NO TEST"
@@ -62,43 +62,43 @@ Select *Stash Pull Request Builder* then configure:
 
 ## Building the merge of Source Branch into Target Branch
 
-You may want Jenkins to build the merged PR (that is the merge of `sourceBranch` into `targetBranch`) to catch any issues resulting from this. To do this change the Branch Specifier from `origin/pr/${pullRequestId}/from` to `origin/pr/${pullRequestId}/merge`
+You may want Jenkins to build the merged PR (that is the merge of `sourceBranch` into `targetBranch`) to catch any issues resulting from the merge.
 
-If you are building the merged PR you probably want Jenkins to do a new build when the target branch changes. There is an advanced option in the build trigger, "Rebuild if destination branch changes?" which enables this.
+### Letting Stash do the merge
 
-You probably also only want to build if the PR was mergeable and always without conflicts. There are advanced options in the build trigger for both of these. 
+To do this, change the Branch Specifier to `origin/pr/${pullRequestId}/merge`
 
-**NOTE: *Always enable `Build only if Stash reports no conflicts` if using the merge RefSpec!*** This will make sure the lazy merge on stash has happened before the build is triggered.
+**IMPORTANT: Enable "Build only if Stash reports no conflicts" in the advanced settings.** You can end up building a wrong commit if you don't enable that option. This option will enable a call to Stash REST API to make it update the "merge" refspec.
 
-#### Merging Locally
-If you don't want to use the lazy merged Stash PR RefSpec (described above) the other option is to do the merge locally as part of the build using the Jenkins git plugin (these only work for branches within the same repo);
+You probably also want to enable "Rebuild if destination branch changes" to make sure Jenkins rechecks the PR if other updates are made to the target branch.
 
-1. Select Git SCM
-2. Add Repository URL as below
-   `git@myStashHost.com:${projectCode}/${repositoryName}.git`
-3. In Branch Specifier, type as below
-   `*/${sourceBranch}`
-4. In the "Source Code Management" > "Git" > "Additional Behaviors" section, click "Add" > "Merge Before Building"
-5. In "Name of Repository" put "origin" (or, if not using default name, use your remote repository's name. Note: unlike in the main part of the Git Repository config, you cannot leave this item blank for "default".)
-6. In "Branch to merge to" put `${targetBranch}`
-  - Note that as long as you don't push these changes to your remote repository, the merge only happens in your local repository.
+This approach makes if possible to test pull requests when the source and the destination repositories are different.
 
-Alternatively if you want to use Stash's `origin/pr/${pullRequestId}/from` branch specifier and merge locally to avoid the race condition without checking stash if the PR is conflicted using the `merge` branch spec then;
+The downside is less flexibility. You cannot specify how the merge is performed. Also, if a force push is made to the repository while this plugin is operating, the merge refspec can represent a newer PR revision than the one received by this plugin as `sourceCommitHash`.
 
-1. Use the `origin/pr/${pullRequestId}/from` branch specifier
-2. In the "Source Code Management" > "Git" > "Additional Behaviors" section, click "Add" > "Merge Before Building"
-3. Set the "Branch to merge to" to `${targetBranch}`
-4. Alternatively to the above 3 steps, just run a `git merge $destinationCommitHash`
+### Merging locally
 
-If you have downstream jobs that are not triggered by this plugin you can simply add a if condition on this command to check if the parameters are available;
+The other option is to do the merge in Jenkins as part of the build. This would only work if the source and the destination repositories are the same.
+
+- To pull the target branch, change "Refspec" in "Source Code Management" > "Git" > "Repositories" -> "Advanced" to
+  `+refs/pull-requests/${pullRequestId}/*:refs/remotes/origin/pr/${pullRequestId}/* +refs/heads/${targetBranch}:refs/remotes/origin/${targetBranch}`
+- The "Branch Specifier" remains `${sourceCommitHash}`
+- In the "Source Code Management" > "Git" > "Additional Behaviors" section, click "Add" > "Merge Before Build"
+- In the "Name of repository" put "origin" or whatever in your remote repository's name. Note: unlike in the main part of the Git Repository config, you cannot leave this item blank for the default name.
+- Set the "Branch to merge to" to `${targetBranch}`
+
+An alternative to the "Merge Before Build" is running `git merge --no-edit $destinationCommitHash` in the beginning of the "Execute shell" section.
+
+If you have downstream jobs that are not triggered by this plugin, you can simply add a condition on this command to check if the parameters are available:
 
 ```
 if [ ! -z "$destinationCommitHash" ]; then
-    git merge $destinationCommitHash
+    git merge --no-edit $destinationCommitHash
 fi
 ```
 
 ## Notify Stash of build result
+
 If you are using the [StashNotifier plugin](https://wiki.jenkins-ci.org/display/JENKINS/StashNotifier+Plugin) and have enabled the 'Notify Stash Instance' Post-build Action while building the merged PR, you need to set `${sourceCommitHash}` as Commit SHA-1 to record the build result against the source commit.
 
 ## Rerun test builds
