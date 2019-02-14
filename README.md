@@ -72,7 +72,7 @@ To do this, change the Branch Specifier to `origin/pr/${pullRequestId}/merge`
 
 You probably also want to enable "Rebuild if destination branch changes" to make sure Jenkins rechecks the PR if other updates are made to the target branch.
 
-This approach makes if possible to test pull requests when the source and the destination repositories are different.
+This approach makes it possible to test pull requests when the source and the destination repositories are different.
 
 The downside is less flexibility. You cannot specify how the merge is performed. Also, if a force push is made to the repository while this plugin is operating, the merge refspec can represent a newer PR revision than the one received by this plugin as `sourceCommitHash`.
 
