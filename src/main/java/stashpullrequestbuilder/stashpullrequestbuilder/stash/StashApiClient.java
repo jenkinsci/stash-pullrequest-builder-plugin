@@ -473,7 +473,8 @@ public class StashApiClient {
         return basePath.substring(0, basePath.length() - 1) + "?start=" + start;
     }
 
-    private static class EasySSLProtocolSocketFactory extends org.apache.commons.httpclient.contrib.ssl.EasySSLProtocolSocketFactory {
+    private static class EasySSLProtocolSocketFactory 
+	    extends  stashpullrequestbuilder.stashpullrequestbuilder.repackage.org.apache.commons.httpclient.contrib.ssl.EasySSLProtocolSocketFactory {
         private static final Log LOG = LogFactory.getLog(EasySSLProtocolSocketFactory.class);
         private SSLContext sslcontext = null;
 
