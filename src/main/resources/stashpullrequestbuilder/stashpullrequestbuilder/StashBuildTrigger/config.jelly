@@ -1,6 +1,6 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
-  <f:entry title="Cron" field="cron">
+  <f:entry title="Cron schedule" field="cron">
     <f:textbox />
   </f:entry>
   <f:entry title="Stash URL" field="stashHost">
@@ -16,7 +16,7 @@
     <f:textbox />
   </f:entry>
   <f:advanced>
-    <f:entry title="Ignore ssl certificates" field="ignoreSsl">
+    <f:entry title="Ignore SSL certificates" field="ignoreSsl">
       <f:checkbox default="false"/>
     </f:entry>
     <f:entry title="Build PR targeting only these branches" field="targetBranchesToBuild">
@@ -37,19 +37,19 @@
     <f:entry title="Merge PR if build is successful" field="mergeOnSuccess">
         <f:checkbox default="false"/>
     </f:entry>
-    <f:entry title="Keep PR comment only for most recent Build" field="deletePreviousBuildFinishComments">
+    <f:entry title="Keep PR comment only for most recent build" field="deletePreviousBuildFinishComments">
       <f:checkbox default="false"/>
     </f:entry>
     <f:entry title="Cancel outdated jobs" field="cancelOutdatedJobsEnabled">
       <f:checkbox default="false"/>
     </f:entry>
-    <f:entry title="CI Skip Phrases" field="ciSkipPhrases">
+    <f:entry title="Phrase to disable builds" field="ciSkipPhrases">
       <f:textbox default="NO TEST" />
     </f:entry>
-    <f:entry title="Only build when asked (with test phrase)" field="onlyBuildOnComment">
+    <f:entry title="Only build if asked with the build phrase" field="onlyBuildOnComment">
       <f:checkbox default="false"/>
     </f:entry>
-    <f:entry title="CI Build Phrases" field="ciBuildPhrases">
+    <f:entry title="Phrase to request a build" field="ciBuildPhrases">
       <f:textbox default="test this please"/>
     </f:entry>
   </f:advanced>
