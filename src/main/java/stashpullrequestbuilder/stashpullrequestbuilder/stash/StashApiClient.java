@@ -1,6 +1,7 @@
 package stashpullrequestbuilder.stashpullrequestbuilder.stash;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpClient;
@@ -8,10 +9,12 @@ import org.apache.commons.httpclient.HttpClientError;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
+import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
+import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.params.HttpParams;
 import org.apache.commons.httpclient.protocol.Protocol;
@@ -27,6 +30,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -179,11 +183,13 @@ public class StashApiClient {
     private HttpClient getHttpClient() {
         HttpClient client = new HttpClient();
         HttpParams httpParams = client.getParams();
+        //Setting cookie policy to fix connection
+        httpParams.setParameter(HttpClientParams.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
         //ConnectionTimeout : This denotes the time elapsed before the connection established or Server responded to connection request.
         httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, StashApiClient.HTTP_CONNECTION_TIMEOUT_SECONDS * 1000);
         //SoTimeout : Maximum period inactivity between two consecutive data packets arriving at client side after connection is established.
         httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, StashApiClient.HTTP_SOCKET_TIMEOUT_SECONDS * 1000);
-
+        
 //        if (Jenkins.getInstance() != null) {
 //            ProxyConfiguration proxy = Jenkins.getInstance().proxy;
 //            if (proxy != null) {

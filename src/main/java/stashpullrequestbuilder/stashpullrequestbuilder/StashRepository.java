@@ -287,13 +287,12 @@ public class StashRepository {
             if (comments != null) {
                 Collections.sort(comments);
                 Collections.reverse(comments);
-				int counter = 1;
                 for (StashPullRequestComment comment : comments) {
                     String content = comment.getText();
                     if (content == null || content.isEmpty()) {
                         continue;
                     }
-					logger.info("Comment #" + counter++ + ": " + content);
+
                     //These will match any start or finish message -- need to check commits
                     String escapedBuildName = Pattern.quote(builder.getProject().getDisplayName());
                     String project_build_start = String.format(BUILD_START_REGEX, escapedBuildName);
