@@ -38,6 +38,7 @@ import java.net.UnknownHostException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -59,7 +60,8 @@ public class StashApiClient {
     private static final Logger logger = Logger.getLogger(StashApiClient.class.getName());
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    private String apiBaseUrl;
+	private String apiBaseUrl;
+	private String branchUtilsApiBaseUrl;
 
     private String project;
     private String repositoryName;
@@ -71,6 +73,7 @@ public class StashApiClient {
         this.project = project;
         this.repositoryName = repositoryName;
         this.apiBaseUrl = stashHost.replaceAll("/$", "") + "/rest/api/1.0/projects/";
+		this.branchUtilsApiBaseUrl = stashHost.replaceAll("/$", "") + "/rest/branch-utils/1.0/projects/";
         if (ignoreSsl) {
             Protocol easyhttps = new Protocol("https", (ProtocolSocketFactory) new EasySSLProtocolSocketFactory(), 443);
             Protocol.registerProtocol("https", easyhttps);
@@ -537,5 +540,91 @@ public class StashApiClient {
             return this.getSSLContext().getSocketFactory().createSocket(socket, host, port, autoClose);
         }
     }
+	private StashPullRequestCommitsResponse parseCommitsJson(String response)
+			throws IOException {
+		StashPullRequestCommitsResponse parsedResponse;
+		parsedResponse = mapper.readValue(response,
+				StashPullRequestCommitsResponse.class);
+		return parsedResponse;
+	}
+	
+	private StashBranchCommitResponse parseBranchCommitJson(String response)
+			throws IOException {
+		StashBranchCommitResponse parsedResponse;
+		parsedResponse = mapper.readValue(response,
+				StashBranchCommitResponse.class);
+		return parsedResponse;
+	}
+	
+	public String getPullRequestCommitIds(String pullRequestId, String excludeCommitsFromBranch) {
+		try {
+			String response = getRequest(apiBaseUrl + this.project + "/repos/"
+					+ this.repositoryName + "/pull-requests/" + pullRequestId
+					+ "/commits");
+			StashPullRequestCommitsResponse resp = parseCommitsJson(response);
+
+			return extractCommits(resp, excludeCommitsFromBranch);
+		} catch (Exception e) {
+			logger.log(Level.WARNING, "invalid pull request response.", e);
+		}
+		return null;
+	}
+
+	public StashBranchCommitResponse getCommitBranch(String commitId) {
+		try {
+			String response = getRequest(branchUtilsApiBaseUrl + this.project + "/repos/"
+					+ this.repositoryName + "/branches/info/" + commitId);
+			StashBranchCommitResponse resp = parseBranchCommitJson(response);
+
+			return resp;
+		} catch (Exception e) {
+			logger.log(Level.WARNING, "invalid branch commit response.", e);
+		}
+		return null;
+	}
+	
+	private String extractCommits(
+			StashPullRequestCommitsResponse commitsResponse, String excludeCommitsFromBranch) {
+		StringBuilder commitsList = new StringBuilder();
+		for (int i = 0; i < commitsResponse.getCommitValues().size(); i++) {
+			StashPullRequestCommit commit = commitsResponse.getCommitValues()
+					.get(i);
+			if (commit != null && commit.getDisplayId() != null) {
+				if(commit.getParentCommits().size()>1){
+					for(StashPullRequestCommit parentCommit : commit.getParentCommits()){
+						if(excludeCommitsFromBranch != null) {
+							StashBranchCommitResponse branchResponse = getCommitBranch(parentCommit.getDisplayId());
+							boolean match = false;
+							for(StashBranch branch : branchResponse.getBranches()) {
+								if(branch.getDisplayId().equals(excludeCommitsFromBranch)) {
+									match = true;
+								}
+							}
+							if(!match) {
+								commitsList = AddToList(commitsList, parentCommit.getDisplayId());
+							}
+						}
+						else {
+							commitsList = AddToList(commitsList, parentCommit.getDisplayId());
+						}
+					}
+				}
+				else {
+					commitsList = AddToList(commitsList, commit.getDisplayId());
+				}
+			}
+		}
+		
+		return commitsList.toString();
+	}
+	
+	private StringBuilder AddToList(StringBuilder commitsList, String commitId) {
+		if (commitsList.toString().equals("")) {
+			commitsList.append(commitId);
+		} else {
+			commitsList.append(";" + commitId);
+		}
+		return commitsList;
+	}
 }
 

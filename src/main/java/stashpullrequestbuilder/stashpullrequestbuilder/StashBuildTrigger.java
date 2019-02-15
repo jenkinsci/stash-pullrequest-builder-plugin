@@ -58,6 +58,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     private final String ciSkipPhrases;
     private final String ciBuildPhrases;
     private final String targetBranchesToBuild;
+    private final String excludeCommitsFromBranch;
     private final boolean ignoreSsl;
     private final boolean checkDestinationCommit;
     private final boolean checkMergeable;
@@ -81,6 +82,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             String projectCode,
             String repositoryName,
             String ciSkipPhrases,
+            String excludeCommitsFromBranch,
             boolean ignoreSsl,
             boolean checkDestinationCommit,
             boolean checkMergeable,
@@ -100,6 +102,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         this.projectCode = projectCode;
         this.repositoryName = repositoryName;
         this.ciSkipPhrases = ciSkipPhrases;
+        this.excludeCommitsFromBranch = excludeCommitsFromBranch;
         this.cancelOutdatedJobsEnabled = cancelOutdatedJobsEnabled;
         this.ciBuildPhrases = ciBuildPhrases == null ? "test this please" : ciBuildPhrases;
         this.ignoreSsl = ignoreSsl;
@@ -223,6 +226,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         values.add(new StringParameterValue("pullRequestTitle", cause.getPullRequestTitle()));
         values.add(new StringParameterValue("sourceCommitHash", cause.getSourceCommitHash()));
         values.add(new StringParameterValue("destinationCommitHash", cause.getDestinationCommitHash()));
+        values.add(new StringParameterValue("commitsList", cause.getCommitsList()));
 
         Map<String, String> additionalParameters = cause.getAdditionalParameters();
         if(additionalParameters != null){
@@ -318,7 +322,11 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         return onlyBuildOnComment;
     }
 
-    public static final class StashBuildTriggerDescriptor extends TriggerDescriptor {
+    public String getExcludeCommitsFromBranch() {
+		return excludeCommitsFromBranch;
+	}
+
+	public static final class StashBuildTriggerDescriptor extends TriggerDescriptor {
         public StashBuildTriggerDescriptor() {
             load();
         }

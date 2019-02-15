@@ -60,7 +60,6 @@ public class StashBuilds {
         else {
             buildUrl = rootUrl + build.getUrl();
         }
-        repository.deletePullRequestComment(cause.getPullRequestId(), cause.getBuildStartCommentId());
 
         String additionalComment = "";
 
@@ -76,7 +75,9 @@ public class StashBuilds {
         repository.postFinishedComment(cause.getPullRequestId(), cause.getSourceCommitHash(),
                 cause.getDestinationCommitHash(), result, buildUrl,
                 build.getNumber(), additionalComment, duration);
-
+		
+        repository.deletePullRequestComment(cause.getPullRequestId(), cause.getBuildStartCommentId());
+		
         //Merge PR
         StashBuildTrigger trig = StashBuildTrigger.getTrigger(build.getProject());
         if(trig.getMergeOnSuccess() && build.getResult() == Result.SUCCESS) {

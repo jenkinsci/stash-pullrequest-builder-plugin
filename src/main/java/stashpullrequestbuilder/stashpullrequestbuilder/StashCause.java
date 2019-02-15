@@ -21,6 +21,8 @@ public class StashCause extends Cause {
     private final String buildStartCommentId;
     private final String pullRequestVersion;
     private final String stashHost;
+    private final String commitsList;
+    
     private final Map<String,String> additionalParameters;
 
     public StashCause(String stashHost,
@@ -36,7 +38,8 @@ public class StashCause extends Cause {
                           String destinationCommitHash,
                           String buildStartCommentId,
                           String pullRequestVersion,
-                          Map<String,String> additionalParameters) {
+			Map<String, String> additionalParameters,
+			String commitsList) {
         this.sourceBranch = sourceBranch;
         this.targetBranch = targetBranch;
         this.sourceRepositoryOwner = sourceRepositoryOwner;
@@ -51,11 +54,17 @@ public class StashCause extends Cause {
         this.pullRequestVersion = pullRequestVersion;
         this.stashHost = stashHost.replaceAll("/$", "");
         this.additionalParameters = additionalParameters;
+        this.commitsList = commitsList;
     }
 
-    public String getSourceBranch() {
+    public String getCommitsList() {
+        return commitsList;
+    }
+    
+	public String getSourceBranch() {
         return sourceBranch;
     }
+	
     public String getTargetBranch() {
         return targetBranch;
     }
@@ -91,6 +100,8 @@ public class StashCause extends Cause {
     public String getSourceCommitHash() { return sourceCommitHash; }
 
     public String getDestinationCommitHash() { return destinationCommitHash; }
+
+    public void setBuildStartCommentId(String buildStartCommentId) { this.buildStartCommentId = buildStartCommentId; }
 
     public String getBuildStartCommentId() { return buildStartCommentId; }
 

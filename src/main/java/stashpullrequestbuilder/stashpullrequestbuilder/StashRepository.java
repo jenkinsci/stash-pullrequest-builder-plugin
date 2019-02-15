@@ -12,6 +12,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -148,7 +149,9 @@ public class StashRepository {
                 if (trigger.getDeletePreviousBuildFinishComments()) {
                     deletePreviousBuildFinishedComments(pullRequest);
                 }
-            String commentId = postBuildStartCommentTo(pullRequest);
+                
+            String commitsList = this.client.getPullRequestCommitIds(pullRequest.getId(), trigger.getExcludeCommitsFromBranch());
+            
             StashCause cause = new StashCause(
                     trigger.getStashHost(),
                     pullRequest.getFromRef().getBranch().getName(),
@@ -161,11 +164,11 @@ public class StashRepository {
                     pullRequest.getTitle(),
                     pullRequest.getFromRef().getLatestCommit(),
                     pullRequest.getToRef().getLatestCommit(),
-                    commentId,
                     pullRequest.getVersion(),
-                    additionalParameters);
+                    additionalParameters,
+                    commitsList);
             this.builder.getTrigger().startJob(cause);
-
+            cause.setBuildStartCommentId(postBuildStartCommentTo(pullRequest));
         }
     }
 
@@ -192,7 +195,7 @@ public class StashRepository {
 
     public void postFinishedComment(String pullRequestId, String sourceCommit,  String destinationCommit, Result buildResult, String buildUrl, int buildNumber, String additionalComment, String duration) {
         String message = getMessageForBuildResult(buildResult);
-        String comment = format(BUILD_FINISH_SENTENCE, builder.getProject().getDisplayName(), sourceCommit, destinationCommit, message, buildUrl, buildNumber, duration);
+        String comment = format(BUILD_FINISH_SENTENCE, builder.getProject().getDisplayName(), sourceCommit, destinationCommit, message, buildUrl, buildNumber, buildUrl, duration);
 
         comment = comment.concat(additionalComment);
 
@@ -284,12 +287,13 @@ public class StashRepository {
             if (comments != null) {
                 Collections.sort(comments);
                 Collections.reverse(comments);
+				int counter = 1;
                 for (StashPullRequestComment comment : comments) {
                     String content = comment.getText();
                     if (content == null || content.isEmpty()) {
                         continue;
                     }
-
+					logger.info("Comment #" + counter++ + ": " + content);
                     //These will match any start or finish message -- need to check commits
                     String escapedBuildName = Pattern.quote(builder.getProject().getDisplayName());
                     String project_build_start = String.format(BUILD_START_REGEX, escapedBuildName);

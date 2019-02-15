@@ -30,7 +30,7 @@ public class StashPostBuildComment extends Notifier {
     }
 
     public BuildStepMonitor getRequiredMonitorService() {
-        return BuildStepMonitor.BUILD;
+        return BuildStepMonitor.NONE;
     }
 
     public String getBuildSuccessfulComment() {
