@@ -1,14 +1,13 @@
 Stash Pull Request Builder Plugin
 ================================
 
-[![Join the chat at https://gitter.im/nemccarthy/stash-pullrequest-builder-plugin](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nemccarthy/stash-pullrequest-builder-plugin?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Join the chat at https://gitter.im/nemccarthy/stash-pullrequest-builder-plugin](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/jenkinsci/stash-pullrequest-builder-plugin?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://ci.jenkins.io/buildStatus/icon?job=Plugins/stash-pullrequest-builder-plugin/master)](https://ci.jenkins.io/job/Plugins/job/stash-pullrequest-builder-plugin/job/master/)
 
 This Jenkins plugin builds pull requests from a Atlassian Stash server and will report the test results as a comment.
 This plugin was inspired by the GitHub & BitBucket pull request builder plugins.
 
 - Official [Jenkins Plugin Page](https://wiki.jenkins-ci.org/display/JENKINS/Stash+pullrequest+builder+plugin)
-- See this [blogpost](http://blog.nemccarthy.me/?p=387) for more details
-
 
 ## Prerequisites
 
@@ -44,16 +43,16 @@ Select *Git* then configure:
 Select *Stash Pull Request Builder* then configure:
 
 - **Cron**: must be specified. eg: every 2 minute `H/2 * * * *`
-- **Stash Host**: the *http* or *https* URL of the Stash host (NOT *ssh*). eg: *https://example.com*
-- **Stash Credentials**: Select or Add the login username/password for the Stash Host
+- **Stash URL**: the *http* or *https* URL of the Stash REST API Host (NOT *ssh*). eg: *https://example.com*
+- **Stash Credentials**: Select or Add the login username/password for the Stash REST API Host (NOT ssh key)
 - **Project**: abbreviated project code. eg: *PRJ* or *~user*
 - **RepositoryName**: eg: *Repo*
 
 **Advanced options**
 - Ignore ssl certificates:
-- Build PR targetting only these branches: common separated list of branch names (or regexes). Blank for all.
+- Build PR targeting only these branches: common separated list of branch names (or regexes). Blank for all.
 - Rebuild if destination branch changes:
-- Build only if Stash reports no conflicts: this should be set if using the merge branch to avoid issues with out of data merge branch in stash
+- Build only if Stash reports no conflicts: this should be set if using the merge branch to avoid issues with out of date merge branch in stash
 - Build only if PR is mergeable (note this will stop the PR being built if you have required approvers limit set >0 and the PR hasn't been approved)
 - Cancel outdated jobs
 - CI Skip Phrases: default: "NO TEST"
@@ -72,12 +71,12 @@ You probably also only want to build if the PR was mergeable and always without 
 **NOTE: *Always enable `Build only if Stash reports no conflicts` if using the merge RefSpec!*** This will make sure the lazy merge on stash has happened before the build is triggered.
 
 #### Merging Locally
-If you dont want to use the lazy merged Stash PR RefSpec (described above) the other option is to do the merge locally as part of the build using the Jenkins git plugin (these only work for branches within the same repo);
+If you don't want to use the lazy merged Stash PR RefSpec (described above) the other option is to do the merge locally as part of the build using the Jenkins git plugin (these only work for branches within the same repo);
 
 1. Select Git SCM
-2. Add Repository URL as bellow
+2. Add Repository URL as below
    `git@myStashHost.com:${projectCode}/${repositoryName}.git`
-3. In Branch Specifier, type as bellow
+3. In Branch Specifier, type as below
    `*/${sourceBranch}`
 4. In the "Source Code Management" > "Git" > "Additional Behaviors" section, click "Add" > "Merge Before Building"
 5. In "Name of Repository" put "origin" (or, if not using default name, use your remote repository's name. Note: unlike in the main part of the Git Repository config, you cannot leave this item blank for "default".)
@@ -106,7 +105,7 @@ If you are using the [StashNotifier plugin](https://wiki.jenkins-ci.org/display/
 
 If you want to rerun pull request test, write *"test this please"* comment to your pull request.
 
-##Adding additional parameters to a build
+## Adding additional parameters to a build
 
 If you want to add additional parameters to the triggered build, add comments using the pattern `p:<parameter_name>=<value>`, one at each line, prefixed with `p:`. If the same parameter name appears multiple times the latest comment with that parameter will decide the value.
 
@@ -122,7 +121,7 @@ If you want to add additional parameters to the triggered build, add comments us
 It is possible to add a post build action that gives the option to post additional information to Stash when a build has been either successful or failed.
 These comments can contain environment variables that will be translated when posted to Stash.
 
-This feature can be used to post for instance a url to the deployed application or code coverage at a successful build and why the build failed like what tests that did not pass.
+This feature can be used to post for instance a URL to the deployed application or code coverage at a successful build and why the build failed like what tests that did not pass.
 
 ## Copyright
 

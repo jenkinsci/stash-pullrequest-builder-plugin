@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<FindBugsFilter> 
+     <Match>
+       <Class name="stashpullrequestbuilder.stashpullrequestbuilder.StashBuildTrigger" />
+       <Or>
+          <Method name="abortRunningJobsThatMatch" />
+          <Method name="getDefaultParameters" />
+          <Method name="startJob" />      
+       </Or>
+       <Bug pattern="NP_NULL_ON_SOME_PATH" />
+     </Match>
+
+</FindBugsFilter>

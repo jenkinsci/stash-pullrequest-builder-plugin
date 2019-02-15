@@ -53,9 +53,9 @@ import java.util.logging.Logger;
 @SuppressFBWarnings("EQ_DOESNT_OVERRIDE_EQUALS")
 public class StashApiClient {
 
-	private static final int HTTP_REQUEST_TIMEOUT_SECONDS = 60;
-	private static final int HTTP_CONNECTION_TIMEOUT_SECONDS = 15;
-	private static final int HTTP_SOCKET_TIMEOUT_SECONDS = 15;
+    private static final int HTTP_REQUEST_TIMEOUT_SECONDS = 60;
+    private static final int HTTP_CONNECTION_TIMEOUT_SECONDS = 15;
+    private static final int HTTP_SOCKET_TIMEOUT_SECONDS = 15;
 
     private static final Logger logger = Logger.getLogger(StashApiClient.class.getName());
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -178,11 +178,11 @@ public class StashApiClient {
 
     private HttpClient getHttpClient() {
         HttpClient client = new HttpClient();
-    	HttpParams httpParams = client.getParams();
+        HttpParams httpParams = client.getParams();
         //ConnectionTimeout : This denotes the time elapsed before the connection established or Server responded to connection request.
-    	httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, StashApiClient.HTTP_CONNECTION_TIMEOUT_SECONDS * 1000);
-    	//SoTimeout : Maximum period inactivity between two consecutive data packets arriving at client side after connection is established.
-    	httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, StashApiClient.HTTP_SOCKET_TIMEOUT_SECONDS * 1000);
+        httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, StashApiClient.HTTP_CONNECTION_TIMEOUT_SECONDS * 1000);
+        //SoTimeout : Maximum period inactivity between two consecutive data packets arriving at client side after connection is established.
+        httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, StashApiClient.HTTP_SOCKET_TIMEOUT_SECONDS * 1000);
 
 //        if (Jenkins.getInstance() != null) {
 //            ProxyConfiguration proxy = Jenkins.getInstance().proxy;
@@ -219,17 +219,17 @@ public class StashApiClient {
         Thread thread;
         try {
             //Run the http request in a future task so we have the opportunity
-        	//to cancel it if it gets hung up; which is possible if stuck at
-        	//socket native layer.  see issue JENKINS-30558
-        	httpTask = new FutureTask<String>(new Callable<String>() {
+            //to cancel it if it gets hung up; which is possible if stuck at
+            //socket native layer.  see issue JENKINS-30558
+            httpTask = new FutureTask<String>(new Callable<String>() {
 
-            	private HttpClient client;
-            	private GetMethod httpget;
+                private HttpClient client;
+                private GetMethod httpget;
 
                 @Override
                 public String call() throws Exception {
-            		String response = null;
-            		int responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
+                    String response = null;
+                    int responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
                     responseCode = client.executeMethod(httpget);
                     if (!validResponseCode(responseCode)) {
                         logger.log(Level.SEVERE, "Failing to get response from Stash PR GET" + httpget.getPath());
@@ -241,14 +241,14 @@ public class StashApiClient {
                     IOUtils.copy(responseBodyAsStream, stringWriter, "UTF-8");
                     response = stringWriter.toString();
 
-                	return response;
+                    return response;
 
                 }
 
                 public Callable<String> init(HttpClient client, GetMethod httpget) {
-                	this.client = client;
-                	this.httpget = httpget;
-                	return this;
+                    this.client = client;
+                    this.httpget = httpget;
+                    return this;
                 }
 
               }.init(client, httpget));
@@ -261,10 +261,10 @@ public class StashApiClient {
             httpget.abort();
             throw new RuntimeException(e);
         } catch (Exception e) {
-        	e.printStackTrace();
-        	throw new RuntimeException(e);
+            e.printStackTrace();
+            throw new RuntimeException(e);
         } finally {
-        	httpget.releaseConnection();
+            httpget.releaseConnection();
         }
         logger.log(Level.FINEST, "PR-GET-RESPONSE:" + response);
         return response;
@@ -287,25 +287,25 @@ public class StashApiClient {
 
         try {
           //Run the http request in a future task so we have the opportunity
-        	//to cancel it if it gets hung up; which is possible if stuck at
-        	//socket native layer.  see issue JENKINS-30558
-        	httpTask = new FutureTask<Integer>(new Callable<Integer>() {
+            //to cancel it if it gets hung up; which is possible if stuck at
+            //socket native layer.  see issue JENKINS-30558
+            httpTask = new FutureTask<Integer>(new Callable<Integer>() {
 
-            	private HttpClient client;
-            	private DeleteMethod httppost;
+                private HttpClient client;
+                private DeleteMethod httppost;
 
                 @Override
                 public Integer call() throws Exception {
-                	int res = -1;
-                	res = client.executeMethod(httppost);
+                    int res = -1;
+                    res = client.executeMethod(httppost);
                     return res;
 
                 }
 
                 public Callable<Integer> init(HttpClient client, DeleteMethod httppost) {
-                	this.client = client;
-                	this.httppost = httppost;
-                	return this;
+                    this.client = client;
+                    this.httppost = httppost;
+                    return this;
                 }
 
               }.init(client, httppost));
@@ -318,10 +318,10 @@ public class StashApiClient {
             httppost.abort();
             throw new RuntimeException(e);
         } catch (Exception e) {
-        	e.printStackTrace();
-        	throw new RuntimeException(e);
+            e.printStackTrace();
+            throw new RuntimeException(e);
         } finally {
-        	httppost.releaseConnection();
+            httppost.releaseConnection();
         }
 
         logger.log(Level.FINE, "Delete comment {" + path + "} returned result code; " + res);
@@ -362,17 +362,17 @@ public class StashApiClient {
 
         try {
           //Run the http request in a future task so we have the opportunity
-        	//to cancel it if it gets hung up; which is possible if stuck at
-        	//socket native layer.  see issue JENKINS-30558
+            //to cancel it if it gets hung up; which is possible if stuck at
+            //socket native layer.  see issue JENKINS-30558
             httpTask = new FutureTask<String>(new Callable<String>() {
 
-            	private HttpClient client;
-            	private PostMethod httppost;
+                private HttpClient client;
+                private PostMethod httppost;
 
                 @Override
                 public String call() throws Exception {
-                	String response = "";
-                	int responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
+                    String response = "";
+                    int responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
 
                     responseCode = client.executeMethod(httppost);
                     if (!validResponseCode(responseCode)) {
@@ -391,9 +391,9 @@ public class StashApiClient {
                 }
 
                 public Callable<String> init(HttpClient client, PostMethod httppost) {
-                	this.client = client;
-                	this.httppost = httppost;
-                	return this;
+                    this.client = client;
+                    this.httppost = httppost;
+                    return this;
                 }
 
               }.init(client, httppost));
@@ -409,7 +409,7 @@ public class StashApiClient {
            e.printStackTrace();
            throw new RuntimeException(e);
         } finally {
-        	  httppost.releaseConnection();
+              httppost.releaseConnection();
         }
 
         logger.log(Level.FINEST, "PR-POST-RESPONSE:" + response);
@@ -427,7 +427,7 @@ public class StashApiClient {
 
     private StashPullRequestResponse parsePullRequestJson(String response) throws IOException {
         StashPullRequestResponse parsedResponse;
-	    parsedResponse = mapper.readValue(response, StashPullRequestResponse.class);
+        parsedResponse = mapper.readValue(response, StashPullRequestResponse.class);
         return parsedResponse;
     }
 

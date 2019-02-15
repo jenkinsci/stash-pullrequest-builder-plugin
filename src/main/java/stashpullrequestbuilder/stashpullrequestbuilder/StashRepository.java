@@ -89,27 +89,27 @@ public class StashRepository {
     }
 
     public static AbstractMap.SimpleEntry<String,String> getParameter(String content){
-    	if(content.isEmpty()){
-    		return null;
-    	}
+        if(content.isEmpty()){
+            return null;
+        }
         Matcher parameterMatcher = ADDITIONAL_PARAMETER_REGEX_PATTERN.matcher(content);
         if(parameterMatcher.find(0)){
-        	String parameterName = parameterMatcher.group(1);
-        	String parameterValue = parameterMatcher.group(3);
-        	return new AbstractMap.SimpleEntry<String,String>(parameterName, parameterValue);
+            String parameterName = parameterMatcher.group(1);
+            String parameterValue = parameterMatcher.group(3);
+            return new AbstractMap.SimpleEntry<String,String>(parameterName, parameterValue);
         }
         return null;
     }
 
     public static Map<String, String> getParametersFromContent(String content){
         Map<String, String> result = new TreeMap<String, String>();
-		String lines[] = content.split("\\r?\\n|\\r");
-		for(String line : lines){
-			AbstractMap.SimpleEntry<String,String> parameter = getParameter(line);
-			if(parameter != null){
-				result.put(parameter.getKey(), parameter.getValue());
-			}
-		}
+        String lines[] = content.split("\\r?\\n|\\r");
+        for(String line : lines){
+            AbstractMap.SimpleEntry<String,String> parameter = getParameter(line);
+            if(parameter != null){
+                result.put(parameter.getKey(), parameter.getValue());
+            }
+        }
 
         return result;
    }
@@ -135,7 +135,7 @@ public class StashRepository {
 
                 Map<String,String> parameters = getParametersFromContent(content);
                 for(String key : parameters.keySet()){
-                	result.put(key, parameters.get(key));
+                    result.put(key, parameters.get(key));
                 }
             }
             return result;
@@ -145,7 +145,7 @@ public class StashRepository {
 
     public void addFutureBuildTasks(Collection<StashPullRequestResponseValue> pullRequests) {
         for(StashPullRequestResponseValue pullRequest : pullRequests) {
-        	Map<String, String> additionalParameters = getAdditionalParameters(pullRequest);
+            Map<String, String> additionalParameters = getAdditionalParameters(pullRequest);
                 if (trigger.getDeletePreviousBuildFinishComments()) {
                     deletePreviousBuildFinishedComments(pullRequest);
                 }
@@ -325,7 +325,7 @@ public class StashRepository {
                             // if we're checking destination commits, and if this doesn't match, then move on.
                             if (this.trigger.getCheckDestinationCommit()
                                     && (!destinationCommitMatch.equalsIgnoreCase(destinationCommit))) {
-                            	continue;
+                                continue;
                             }
 
                             shouldBuild = false;

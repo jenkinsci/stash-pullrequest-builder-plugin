@@ -1,28 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>2.7</version><!-- which version of Jenkins is this plugin built against? -->
+    <version>3.10</version>
   </parent>
 
-    <!--<properties>-->
-        <!--<jenkins.version>2.7.4</jenkins.version>-->
-    <!--</properties>-->
-
   <artifactId>stash-pullrequest-builder</artifactId>
-  <name>Stash Pullrequest Builder Plugin</name>
-  <version>1.7.1-SNAPSHOT</version>
-  <description>This Jenkins plugin builds pull requests from Stash and will report the test results.</description>
+  <version>${revision}${changelist}</version>
   <packaging>hpi</packaging>
+  <name>Stash Pullrequest Builder Plugin</name>
+  <description>This Jenkins plugin builds pull requests from Stash and will report the test results.</description>
   <url>https://wiki.jenkins-ci.org/display/JENKINS/Stash+pullrequest+builder+plugin</url>
-
-  <scm>
-      <connection>scm:git:ssh://github.com/jenkinsci/stash-pullrequest-builder-plugin.git</connection>
-      <developerConnection>scm:git:ssh://git@github.com/jenkinsci/stash-pullrequest-builder-plugin.git</developerConnection>
-      <url>https://github.com/jenkinsci/stash-pullrequest-builder-plugin</url>
-      <tag>HEAD</tag>
-  </scm>
 
   <developers>
     <developer>
@@ -30,7 +20,59 @@
       <name>Nathan McCarthy</name>
       <email>nem@nemccarthy.me</email>
     </developer>
+    <developer>
+      <id>jimklimov</id>
+      <name>Jim Klimov</name>
+      <email>jimklimov@gmail.com</email>
+    </developer>
+    <developer>
+      <id>jbochenski</id>
+      <name>Jakub Bocheński</name>
+      <email>kuba.bochenski+stash-pullrequest-builder-plugin@gmail.com</email>
+    </developer>
   </developers>
+
+  <scm>
+    <connection>scm:git:ssh://github.com/jenkinsci/stash-pullrequest-builder-plugin.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/jenkinsci/stash-pullrequest-builder-plugin.git</developerConnection>
+    <tag>${scmTag}</tag>
+    <url>https://github.com/jenkinsci/stash-pullrequest-builder-plugin</url>
+  </scm>
+
+  <properties>
+    <revision>1.7.1</revision>
+    <changelist>-SNAPSHOT</changelist>
+    <java.level>8</java.level>
+    <!--<jenkins.version>2.7.4</jenkins.version>-->
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>commons-httpclient</groupId>
+      <artifactId>commons-httpclient</artifactId>
+      <version>3.1</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>1.10</version>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.jackson</groupId>
+      <artifactId>jackson-jaxrs</artifactId>
+      <version>1.9.13</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>git</artifactId>
+      <version>3.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>credentials</artifactId>
+      <version>2.1.5</version>
+    </dependency>
+  </dependencies>
 
   <!-- get every artifact through repo.jenkins-ci.org, which proxies all the artifacts that we need -->
   <repositories>
@@ -40,34 +82,6 @@
     </repository>
   </repositories>
 
-  <dependencies>
-      <dependency>
-          <groupId>commons-httpclient</groupId>
-          <artifactId>commons-httpclient</artifactId>
-          <version>3.1</version>
-      </dependency>
-      <dependency>
-          <groupId>commons-codec</groupId>
-          <artifactId>commons-codec</artifactId>
-          <version>1.10</version>
-      </dependency>
-      <dependency>
-          <groupId>org.codehaus.jackson</groupId>
-          <artifactId>jackson-jaxrs</artifactId>
-          <version>1.9.13</version>
-      </dependency>
-      <dependency>
-          <groupId>org.jenkins-ci.plugins</groupId>
-          <artifactId>git</artifactId>
-          <version>3.0.0</version>
-      </dependency>
-      <dependency>
-          <groupId>org.jenkins-ci.plugins</groupId>
-          <artifactId>credentials</artifactId>
-          <version>2.1.5</version>
-      </dependency>
-  </dependencies>
-
   <pluginRepositories>
     <pluginRepository>
       <id>repo.jenkins-ci.org</id>
@@ -75,30 +89,87 @@
     </pluginRepository>
   </pluginRepositories>
 
-    <build>
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>findbugs-maven-plugin</artifactId>
+          <configuration>
+            <excludeFilterFile>${basedir}/src/findbugs-exclude.xml</excludeFilterFile>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-release-plugin</artifactId>
-            <version>2.5.1</version>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.maven.scm</groupId>
-                    <artifactId>maven-scm-provider-gitexe</artifactId>
-                    <version>1.9.2</version>
-                </dependency>
-            </dependencies>
-        </plugin>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>3.3</version>
-            <configuration>
-                <source>1.6</source>
-                <target>1.6</target>
-            </configuration>
-        </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>2.5.1</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.maven.scm</groupId>
+            <artifactId>maven-scm-provider-gitexe</artifactId>
+            <version>1.9.2</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.3</version>
+        <configuration>
+          <source>1.6</source>
+          <target>1.6</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.github.ekryd.sortpom</groupId>
+        <artifactId>sortpom-maven-plugin</artifactId>
+        <version>2.10.0</version>
+        <configuration>
+          <predefinedSortOrder>recommended_2008_06</predefinedSortOrder>
+          <lineSeparator>\n</lineSeparator>
+          <encoding>${project.build.sourceEncoding}</encoding>
+          <keepBlankLines>true</keepBlankLines>
+          <createBackupFile>false</createBackupFile>
+          <verifyFail>Sort</verifyFail>
+          <sortDependencies>scope</sortDependencies>
+        </configuration>
+        <executions>
+          <execution>
+            <id>sortpom</id>
+            <goals>
+              <goal>verify</goal>
+            </goals>
+            <phase>validate</phase>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
-    </build>
+  </build>
 
+  <profiles>
+    <profile>
+      <id>verify-pom-sorting</id>
+      <activation>
+        <property>
+          <name>env.JENKINS_SERVER_COOKIE</name>
+        </property>
+      </activation>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>com.github.ekryd.sortpom</groupId>
+              <artifactId>sortpom-maven-plugin</artifactId>
+              <configuration>
+                <verifyFail>Stop</verifyFail>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
+  </profiles>
 </project>
