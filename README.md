@@ -42,24 +42,25 @@ Select *Git* then configure:
 
 Select *Stash Pull Request Builder* then configure:
 
-- **Cron**: must be specified. eg: every 2 minute `H/2 * * * *`
-- **Stash URL**: the *http* or *https* URL of the Stash REST API Host (NOT *ssh*). eg: *https://example.com*
-- **Stash Credentials**: Select or Add the login username/password for the Stash REST API Host (NOT ssh key)
-- **Project**: abbreviated project code. eg: *PRJ* or *~user*
-- **RepositoryName**: eg: *Repo*
+- **Cron schedule**: How often to poll, e.g. every 2 minute: `H/2 * * * *`
+- **Stash URL**: The *http* or *https* URL of the Stash REST API (*NOT* ssh), e.g. *https://stash.example.com/*
+- **Stash credentials**: Select or add username and password for the Stash REST API (*NOT* an ssh key).
+- **Project**: Project key (i.e. an abbreviated project name), e.g. *PRJ* or *~user*
+- **RepositoryName**: Name of the Stash repository to be polled, e.g. *Repo*
 
 **Advanced options**
-- Ignore ssl certificates:
-- Build PR targeting only these branches: common separated list of branch names (or regexes). Blank for all.
-- Rebuild if destination branch changes:
-- Build only if Stash reports no conflicts: this should be set if using the merge branch to avoid issues with out-of-date merge branch in Stash
-- Build only if Stash reports PR is mergeable (note this will stop the PR being built if you have required approvers limit set >0 and the PR hasn't been approved)
-- Probe Stash for merge status: This just probes the Stash REST API endpoint that causes recalculation of Git refspecs (see [JENKINS-35219](https://issues.jenkins-ci.org/browse/JENKINS-35219) and [Atlassian KB 239988](https://answers.atlassian.com/questions/239988/change-pull-request-refs-after-commit-instead-of-after-approval-or-workaround) for details). Use this if you encounter problems with stale commits being built, but don't want to skip builds based on the PR status (as would be the case with the two options above). Also note that this option does not have any special effect if you have enabled one of the two options above.
-- Cancel outdated jobs
-- CI Skip Phrases: default: "NO TEST"
-- Only build when asked (with test phrase):
-- CI Build Phrases: default: "test this please"
-- Target branches: a comma separated list of branches (e.g. brancha,branchb)
+- **Ignore SSL certificates**: Allow invalid or unverifiable (e.g. self-signed) certificates to access Stash REST API over https.
+- **Build PR targeting only these branches**: Comma separated list of branch names (or regexes), blank for all branches.
+- **Rebuild if destination branch changes**: Start the build if the destination commit has changed, i.e. some changes have been made on the target branch.
+- **Build only if Stash reports no conflicts**: Don't build PRs in the "conflict" state. This should be set if using the merge refspec, as Stash doesn't provide the merge refspec for conflicted PRs.
+- **Build only if Stash reports PR is mergeable**: Build if the PR only if Stash allows merging it. *NOTE:* If the PR doesn't have the required number of approvals, the PR would not be tested when this option is enabled.
+- **Probe Stash for merge status**: This just probes the Stash REST API endpoint that causes recalculation of Git refspecs (see [JENKINS-35219](https://issues.jenkins-ci.org/browse/JENKINS-35219) and [Atlassian KB 239988](https://answers.atlassian.com/questions/239988/change-pull-request-refs-after-commit-instead-of-after-approval-or-workaround) for details). Use this if you encounter problems with stale commits being built, but don't want to skip builds based on the PR status (as would be the case with the two options above). Also note that this option does not have any special effect if you have enabled one of the two options above.
+- **Merge PR if build is successful**: Tell Stash to merge the PR automatically if the build job has been successful.
+- **Keep PR comment only for most recent build**: Delete old comments about finished PR builds when starting a new build.
+- **Cancel outdated jobs**: Cancel all jobs in the queue for the same PR.
+- **Phrase to disable builds**: Don't build the PR if the specified phrase has been posted in a PR comment. Default: *NO TEST*
+- **Only build if asked with the build phrase**: Only trigger the build when the build phrase has been posted.
+- **Phrase to request a build**: Build the PR if the specified phrase has been posted as a PR comment in Stash, even if the PR has not changed. Default: *test this please*
 
 ## Building the merge of Source Branch into Target Branch
 

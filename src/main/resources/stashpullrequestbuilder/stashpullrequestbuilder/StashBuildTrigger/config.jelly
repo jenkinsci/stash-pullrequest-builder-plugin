@@ -6,7 +6,7 @@
   <f:entry title="Stash URL" field="stashHost">
       <f:textbox />
   </f:entry>
-  <f:entry title="Stash Credentials (username/password)" field="credentialsId">
+  <f:entry title="Stash credentials (username/password)" field="credentialsId">
     <c:select />
   </f:entry>
   <f:entry title="Project" field="projectCode">
