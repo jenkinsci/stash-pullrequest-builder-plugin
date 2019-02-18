@@ -95,7 +95,7 @@ public class StashPostBuildComment extends Notifier {
 
         @Override
         public String getDisplayName() {
-            return "Stash Pull Request Builder - Post Build Comment";
+            return "Stash pull request builder - post build comment";
         }
     }
 }

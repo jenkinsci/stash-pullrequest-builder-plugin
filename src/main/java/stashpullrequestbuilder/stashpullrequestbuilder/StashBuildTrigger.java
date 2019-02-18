@@ -344,7 +344,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
         @Override
         public String getDisplayName() {
-            return "Stash Pull Requests Builder";
+            return "Stash pull request builder";
         }
 
         @Override
