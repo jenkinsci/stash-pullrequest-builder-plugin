@@ -60,7 +60,7 @@ Select *Stash Pull Request Builder* then configure:
 - **Cancel outdated jobs**: Cancel all jobs in the queue for the same PR.
 - **Phrase to disable builds**: Don't build the PR if the specified phrase has been posted in a PR comment. Default: *NO TEST*
 - **Only build if asked with the build phrase**: Only trigger the build when the build phrase has been posted.
-- **Phrase to request a build**: Build the PR if the specified phrase has been posted as a PR comment in Stash, even if the PR has not changed. Default: *test this please*
+- **Phrase to request a build**: Force (re-)building the PR if the specified phrase has been posted as a PR comment in Stash. This is useful when a build fails due to circumstances unrelated to the codebase. Starting a build in Jenkins GUI won't work, as the pull request data won't be available. Default: *test this please*
 
 ## Building the merge of Source Branch into Target Branch
 

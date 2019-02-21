@@ -49,7 +49,7 @@
     <f:entry title="Only build if asked with the build phrase" field="onlyBuildOnComment">
       <f:checkbox default="false"/>
     </f:entry>
-    <f:entry title="Phrase to request a build" field="ciBuildPhrases">
+    <f:entry title="Phrase to request a (re-)build" field="ciBuildPhrases">
       <f:textbox default="test this please"/>
     </f:entry>
   </f:advanced>
