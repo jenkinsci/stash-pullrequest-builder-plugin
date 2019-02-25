@@ -10,46 +10,28 @@ import java.util.*;
 
 @Extension
 public class StashAditionalParameterEnvironmentContributor extends EnvironmentContributor {
-    private static Set<String> params =
-            new HashSet<String>(Arrays.asList("sourceBranch",
-                    "targetBranch",
-                    "sourceRepositoryOwner",
-                    "sourceRepositoryName",
-                    "pullRequestId",
-                    "destinationRepositoryOwner",
-                    "destinationRepositoryName",
-                    "pullRequestTitle",
-                    "sourceCommitHash",
-                    "destinationCommitHash"));
-
     @Override
     public void buildEnvironmentFor(@Nonnull Run r, @Nonnull EnvVars envs, @Nonnull TaskListener listener) throws IOException, InterruptedException {
         StashCause cause = (StashCause) r.getCause(StashCause.class);
         if (cause == null) {
             return;
         }
-        ParametersAction pa = r.getAction(ParametersAction.class);
-        for (String param : params) {
-            addParameter(param, pa, envs);
-        }
+
+        putEnvVar(envs, "sourceBranch", cause.getSourceBranch());
+        putEnvVar(envs, "targetBranch", cause.getTargetBranch());
+        putEnvVar(envs, "sourceRepositoryOwner", cause.getSourceRepositoryOwner());
+        putEnvVar(envs, "sourceRepositoryName", cause.getSourceRepositoryName());
+        putEnvVar(envs, "pullRequestId", cause.getPullRequestId());
+        putEnvVar(envs, "destinationRepositoryOwner", cause.getDestinationRepositoryOwner());
+        putEnvVar(envs, "destinationRepositoryName", cause.getDestinationRepositoryName());
+        putEnvVar(envs, "pullRequestTitle", cause.getPullRequestTitle());
+        putEnvVar(envs, "sourceCommitHash", cause.getSourceCommitHash());
+        putEnvVar(envs, "destinationCommitHash", cause.getDestinationCommitHash());
+
         super.buildEnvironmentFor(r, envs, listener);
     }
 
-    private static void addParameter(String key,
-                                     ParametersAction pa,
-                                     EnvVars envs) {
-        ParameterValue pv = pa.getParameter(key);
-        if (pv == null || !(pv instanceof StringParameterValue)) {
-            return;
-        }
-        StringParameterValue value = (StringParameterValue) pa.getParameter(key);
-        envs.put(key, getString(value.value, ""));
+    private static void putEnvVar(EnvVars envs, String key, String value) {
+        envs.put(key, Objects.toString(value, ""));
     }
-
-    private static String getString(String actual,
-                                    String d) {
-        return actual == null ? d : actual;
-    }
-
-
 }

@@ -223,16 +223,6 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     public QueueTaskFuture<?> startJob(StashCause cause) {
         List<ParameterValue> values = getDefaultParameters();
-        values.add(new StringParameterValue("sourceBranch", cause.getSourceBranch()));
-        values.add(new StringParameterValue("targetBranch", cause.getTargetBranch()));
-        values.add(new StringParameterValue("sourceRepositoryOwner", cause.getSourceRepositoryOwner()));
-        values.add(new StringParameterValue("sourceRepositoryName", cause.getSourceRepositoryName()));
-        values.add(new StringParameterValue("pullRequestId", cause.getPullRequestId()));
-        values.add(new StringParameterValue("destinationRepositoryOwner", cause.getDestinationRepositoryOwner()));
-        values.add(new StringParameterValue("destinationRepositoryName", cause.getDestinationRepositoryName()));
-        values.add(new StringParameterValue("pullRequestTitle", cause.getPullRequestTitle()));
-        values.add(new StringParameterValue("sourceCommitHash", cause.getSourceCommitHash()));
-        values.add(new StringParameterValue("destinationCommitHash", cause.getDestinationCommitHash()));
 
         Map<String, String> additionalParameters = cause.getAdditionalParameters();
         if(additionalParameters != null){
