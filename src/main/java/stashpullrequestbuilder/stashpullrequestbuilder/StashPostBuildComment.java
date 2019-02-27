@@ -19,7 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class StashPostBuildComment extends Notifier {
-    private static final Logger logger = Logger.getLogger(StashBuildTrigger.class.getName());
+    private static final Logger logger = Logger.getLogger(StashPostBuildComment.class.getName());
     private String buildSuccessfulComment;
     private String buildFailedComment;
 

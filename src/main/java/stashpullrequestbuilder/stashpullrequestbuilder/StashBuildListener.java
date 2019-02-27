@@ -13,7 +13,7 @@ import java.util.logging.Logger;
  */
 @Extension
 public class StashBuildListener extends RunListener<AbstractBuild> {
-    private static final Logger logger = Logger.getLogger(StashBuildTrigger.class.getName());
+    private static final Logger logger = Logger.getLogger(StashBuildListener.class.getName());
 
     @Override
     public void onStarted(AbstractBuild abstractBuild, TaskListener listener) {
