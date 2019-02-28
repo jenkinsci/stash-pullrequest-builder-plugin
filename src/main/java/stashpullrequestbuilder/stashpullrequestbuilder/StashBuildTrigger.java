@@ -230,7 +230,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
       abortRunningJobsThatMatch(cause);
     }
 
-    return this.job.scheduleBuild2(0, cause, new ParametersAction(values));
+    return job.scheduleBuild2(job.getQuietPeriod(), cause, new ParametersAction(values));
   }
 
   private void cancelPreviousJobsInQueueThatMatch(@Nonnull StashCause stashCause) {
