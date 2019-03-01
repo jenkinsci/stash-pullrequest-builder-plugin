@@ -5,6 +5,7 @@ import static java.lang.String.format;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestResponseValue;
 import hudson.model.AbstractProject;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 import java.util.logging.Logger;
 
@@ -12,7 +13,7 @@ import java.util.logging.Logger;
  * Created by Nathan McCarthy
  */
 public class StashPullRequestsBuilder {
-    private static final Logger logger = Logger.getLogger(StashPullRequestsBuilder.class.getName());
+    private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
     private AbstractProject<?, ?> project;
     private StashBuildTrigger trigger;
     private StashRepository repository;
