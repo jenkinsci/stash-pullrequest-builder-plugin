@@ -15,11 +15,12 @@ import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
+import java.lang.invoke.MethodHandles;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class StashPostBuildComment extends Notifier {
-    private static final Logger logger = Logger.getLogger(StashPostBuildComment.class.getName());
+    private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
     private String buildSuccessfulComment;
     private String buildFailedComment;
 
