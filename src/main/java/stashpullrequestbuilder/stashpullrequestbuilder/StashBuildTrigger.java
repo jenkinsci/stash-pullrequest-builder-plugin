@@ -280,7 +280,13 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         this.job.getProperty(ParametersDefinitionProperty.class);
     if (definitionProperty != null) {
       for (ParameterDefinition definition : definitionProperty.getParameterDefinitions()) {
-        values.add(definition.getDefaultParameterValue());
+        ParameterValue defaultValue = definition.getDefaultParameterValue();
+        if (defaultValue == null) {
+          // Can happen for File parameter and Run parameter
+          logger.fine(format("No default value for the parameter '%s'.", definition.getName()));
+        } else {
+          values.add(defaultValue);
+        }
       }
     }
     return values;
