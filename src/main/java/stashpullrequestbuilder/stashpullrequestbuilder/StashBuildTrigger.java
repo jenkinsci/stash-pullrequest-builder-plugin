@@ -287,17 +287,24 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
   @Override
   public void run() {
-    if (this.getBuilder().getProject().isDisabled()) {
-      logger.info(format("Build Skip (%s).", getBuilder().getProject().getName()));
-    } else {
-      logger.info(format("Build started (%s).", getBuilder().getProject().getName()));
-      this.stashPullRequestsBuilder.run();
+    if (stashPullRequestsBuilder == null) {
+      logger.info("Not ready to run.");
+      return;
     }
-    this.getDescriptor().save();
+
+    AbstractProject project = stashPullRequestsBuilder.getProject();
+    if (project.isDisabled()) {
+      logger.fine(format("Project disabled, skipping build (%s).", project.getName()));
+      return;
+    }
+
+    stashPullRequestsBuilder.run();
+    getDescriptor().save();
   }
 
   @Override
   public void stop() {
+    stashPullRequestsBuilder = null;
     super.stop();
   }
 
