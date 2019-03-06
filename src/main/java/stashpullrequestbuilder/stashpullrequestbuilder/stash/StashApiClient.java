@@ -54,7 +54,7 @@ public class StashApiClient {
 
     private static final int HTTP_REQUEST_TIMEOUT_SECONDS = 60;
     private static final int HTTP_CONNECTION_TIMEOUT_SECONDS = 15;
-    private static final int HTTP_SOCKET_TIMEOUT_SECONDS = 15;
+    private static final int HTTP_SOCKET_TIMEOUT_SECONDS = 30;
 
     private static final Logger logger = Logger.getLogger(StashApiClient.class.getName());
     private static final ObjectMapper mapper = new ObjectMapper();
