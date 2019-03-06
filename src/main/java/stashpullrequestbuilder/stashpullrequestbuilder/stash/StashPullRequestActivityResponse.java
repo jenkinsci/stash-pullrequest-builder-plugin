@@ -11,7 +11,7 @@ public class StashPullRequestActivityResponse {
   @JsonIgnore private List<StashPullRequestActivity> prValues;
 
   @JsonProperty("size")
-  private Integer size; //
+  private Integer size;
 
   private Boolean isLastPage;
 

@@ -243,8 +243,13 @@ public class StashRepository {
       StashPullRequestMergableResponse mergable =
           client.getPullRequestMergeStatus(pullRequest.getId());
       boolean res = true;
-      if (trigger.isCheckMergeable()) res = res && mergable.getCanMerge();
-      if (trigger.isCheckNotConflicted()) res = res && !mergable.getConflicted();
+      if (trigger.isCheckMergeable()) {
+        res &= mergable.getCanMerge();
+      }
+
+      if (trigger.isCheckNotConflicted()) {
+        res &= !mergable.getConflicted();
+      }
 
       /* The trigger.isCheckProbeMergeStatus() consulted above
        * is for when a user wants to just probe the Stash REST API

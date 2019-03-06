@@ -9,7 +9,7 @@ import org.codehaus.jackson.annotate.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class StashPullRequestComment implements Comparable<StashPullRequestComment> {
 
-  private Integer commentId; //
+  private Integer commentId;
   private String text;
 
   @JsonProperty("id")

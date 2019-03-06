@@ -6,22 +6,22 @@ import org.codehaus.jackson.annotate.JsonProperty;
 /** Created by Nathan McCarthy */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class StashPullRequestResponseValue {
-  private String description; //
-  private Boolean locked; //
+  private String description;
+  private Boolean locked;
 
-  private String title; //
+  private String title;
 
   private StashPullRequestResponseValueRepository toRef;
 
-  private Boolean closed; //
+  private Boolean closed;
 
   private StashPullRequestResponseValueRepository fromRef;
 
-  private String state; //
-  private String createdDate; //
-  private String updatedDate; //
+  private String state;
+  private String createdDate;
+  private String updatedDate;
 
-  private String id; //
+  private String id;
 
   private String version;
 
