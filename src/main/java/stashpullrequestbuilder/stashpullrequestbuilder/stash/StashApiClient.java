@@ -461,7 +461,9 @@ public class StashApiClient {
     List<StashPullRequestComment> comments = new ArrayList<StashPullRequestComment>();
     for (StashPullRequestActivityResponse parsedResponse : responses) {
       for (StashPullRequestActivity a : parsedResponse.getPrValues()) {
-        if (a != null && a.getComment() != null) comments.add(a.getComment());
+        if (a != null && a.getComment() != null) {
+          comments.add(a.getComment());
+        }
       }
     }
     return comments;

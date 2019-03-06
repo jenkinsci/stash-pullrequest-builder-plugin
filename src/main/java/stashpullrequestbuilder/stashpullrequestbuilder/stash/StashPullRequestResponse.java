@@ -12,7 +12,7 @@ public class StashPullRequestResponse {
 
   //    private int page;
 
-  private int size; //
+  private int size;
 
   private boolean isLastPage;
 
