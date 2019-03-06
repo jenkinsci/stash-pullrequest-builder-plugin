@@ -95,7 +95,7 @@ public class StashApiClient {
         } catch (IOException e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
         }
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     public List<StashPullRequestComment> getPullRequestComments(String projectCode, String commentRepositoryName,
@@ -120,7 +120,7 @@ public class StashApiClient {
         } catch (Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
         }
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     public void deletePullRequestComment(String pullRequestId, String commentId) {
