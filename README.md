@@ -55,6 +55,8 @@ Select *Stash Pull Request Builder* then configure:
 - **Build only if Stash reports no conflicts**: Don't build PRs in the "conflict" state. This should be set if using the merge refspec, as Stash doesn't provide the merge refspec for conflicted PRs.
 - **Build only if Stash reports PR is mergeable**: Build if the PR only if Stash allows merging it. *NOTE:* If the PR doesn't have the required number of approvals, the PR would not be tested when this option is enabled.
 - **Probe Stash for merge status**: This just probes the Stash REST API endpoint that causes recalculation of Git refspecs (see [JENKINS-35219](https://issues.jenkins-ci.org/browse/JENKINS-35219) and [Atlassian KB 239988](https://answers.atlassian.com/questions/239988/change-pull-request-refs-after-commit-instead-of-after-approval-or-workaround) for details). Use this if you encounter problems with stale commits being built, but don't want to skip builds based on the PR status (as would be the case with the two options above). Also note that this option does not have any special effect if you have enabled one of the two options above.
+- **Approve PR on build success**: Marks a PR as Approved when build succeeds.
+- **Mark PR with Needs Work on build failure**: Mark a PR with "Needs Work" when build fails.
 - **Merge PR if build is successful**: Tell Stash to merge the PR automatically if the build job has been successful.
 - **Keep PR comment only for most recent build**: Delete old comments about finished PR builds when starting a new build.
 - **Cancel outdated jobs**: Cancel all jobs in the queue for the same PR.

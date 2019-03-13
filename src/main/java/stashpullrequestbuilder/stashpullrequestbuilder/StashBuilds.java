@@ -15,6 +15,9 @@ public class StashBuilds {
   private StashBuildTrigger trigger;
   private StashRepository repository;
 
+  private static final String APPROVED = "APPROVED";
+  private static final String NEEDS_WORK = "NEEDS_WORK";
+
   public StashBuilds(StashBuildTrigger trigger, StashRepository repository) {
     this.trigger = trigger;
     this.repository = repository;
@@ -81,6 +84,15 @@ public class StashBuilds {
         build.getNumber(),
         additionalComment,
         duration);
+
+    // Mark PR as Approved or Needs Work
+    if (trigger.isApproveOnBuildSuccessful() && build.getResult() == Result.SUCCESS) {
+      repository.markStatus(cause.getPullRequestId(), StashBuilds.APPROVED);
+    }
+
+    if (trigger.isNeedsWorkOnBuildFailure() && result == Result.FAILURE) {
+      repository.markStatus(cause.getPullRequestId(), StashBuilds.NEEDS_WORK);
+    }
 
     // Merge PR
     StashBuildTrigger trig = StashBuildTrigger.getTrigger(build.getProject());
