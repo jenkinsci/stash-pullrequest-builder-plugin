@@ -30,6 +30,7 @@ import hudson.util.ListBoxModel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
@@ -195,11 +196,9 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
   @Override
   public void start(AbstractProject<?, ?> project, boolean newInstance) {
     try {
-      this.stashPullRequestsBuilder = StashPullRequestsBuilder.getBuilder();
-      this.stashPullRequestsBuilder.setProject(project);
-      this.stashPullRequestsBuilder.setTrigger(this);
-      this.stashPullRequestsBuilder.setupBuilder();
-    } catch (IllegalStateException e) {
+      Objects.requireNonNull(project, "project is null");
+      this.stashPullRequestsBuilder = new StashPullRequestsBuilder(project, this);
+    } catch (NullPointerException e) {
       logger.log(Level.SEVERE, "Can't start trigger", e);
       return;
     }

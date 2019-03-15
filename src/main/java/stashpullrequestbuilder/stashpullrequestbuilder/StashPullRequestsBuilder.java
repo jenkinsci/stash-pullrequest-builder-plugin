@@ -5,6 +5,7 @@ import static java.lang.String.format;
 import hudson.model.AbstractProject;
 import java.util.Collection;
 import java.util.logging.Logger;
+import javax.annotation.Nonnull;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestResponseValue;
 
 /** Created by Nathan McCarthy */
@@ -15,12 +16,12 @@ public class StashPullRequestsBuilder {
   private StashRepository repository;
   private StashBuilds builds;
 
-  public static StashPullRequestsBuilder getBuilder() {
-    return new StashPullRequestsBuilder();
-  }
-
-  public void stop() {
-    // TODO?
+  public StashPullRequestsBuilder(
+      @Nonnull AbstractProject project, @Nonnull StashBuildTrigger trigger) {
+    this.project = project;
+    this.trigger = trigger;
+    this.repository = new StashRepository(trigger.getProjectPath(), this);
+    this.builds = new StashBuilds(trigger, repository);
   }
 
   public void run() {
@@ -29,23 +30,6 @@ public class StashPullRequestsBuilder {
     Collection<StashPullRequestResponseValue> targetPullRequests =
         this.repository.getTargetPullRequests();
     this.repository.addFutureBuildTasks(targetPullRequests);
-  }
-
-  public StashPullRequestsBuilder setupBuilder() {
-    if (this.project == null || this.trigger == null) {
-      throw new IllegalStateException();
-    }
-    this.repository = new StashRepository(this.trigger.getProjectPath(), this);
-    this.builds = new StashBuilds(this.trigger, this.repository);
-    return this;
-  }
-
-  public void setProject(AbstractProject<?, ?> project) {
-    this.project = project;
-  }
-
-  public void setTrigger(StashBuildTrigger trigger) {
-    this.trigger = trigger;
   }
 
   public AbstractProject<?, ?> getProject() {
