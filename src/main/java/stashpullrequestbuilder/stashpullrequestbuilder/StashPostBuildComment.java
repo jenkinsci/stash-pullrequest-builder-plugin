@@ -2,23 +2,19 @@ package stashpullrequestbuilder.stashpullrequestbuilder;
 
 import hudson.Extension;
 import hudson.Launcher;
-import hudson.Util;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
-import hudson.model.Result;
+import hudson.model.Describable;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
-public class StashPostBuildComment extends Notifier {
-  private static final Logger logger = Logger.getLogger(StashBuildTrigger.class.getName());
+public class StashPostBuildComment extends Notifier implements Describable<Publisher> {
   private String buildSuccessfulComment;
   private String buildFailedComment;
 
@@ -50,18 +46,6 @@ public class StashPostBuildComment extends Notifier {
 
   @Override
   public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) {
-
-    try {
-      build.addAction(
-          new StashPostBuildCommentAction(
-              Util.fixEmptyAndTrim(build.getEnvironment(listener).expand(buildSuccessfulComment)),
-              Util.fixEmptyAndTrim(build.getEnvironment(listener).expand(buildFailedComment))));
-    } catch (Exception e) {
-      logger.log(Level.SEVERE, "Unable to parse comments", e);
-      listener.finished(Result.FAILURE);
-      return false;
-    }
-
     return true;
   }
 

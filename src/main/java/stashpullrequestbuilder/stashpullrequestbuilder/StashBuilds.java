@@ -1,5 +1,6 @@
 package stashpullrequestbuilder.stashpullrequestbuilder;
 
+import hudson.Util;
 import hudson.model.AbstractBuild;
 import hudson.model.Cause;
 import hudson.model.Result;
@@ -28,7 +29,7 @@ public class StashBuilds {
     return (StashCause) cause;
   }
 
-  public void onStarted(AbstractBuild build) {
+  public void onStarted(AbstractBuild<?, ?> build) {
     StashCause cause = this.getCause(build);
     if (cause == null) {
       return;
@@ -40,7 +41,7 @@ public class StashBuilds {
     }
   }
 
-  public void onCompleted(AbstractBuild build, TaskListener listener) {
+  public void onCompleted(AbstractBuild<?, ?> build, TaskListener listener) {
     StashCause cause = this.getCause(build);
     if (cause == null) {
       return;
@@ -60,7 +61,9 @@ public class StashBuilds {
 
     String additionalComment = "";
 
-    StashPostBuildCommentAction comments = build.getAction(StashPostBuildCommentAction.class);
+    StashPostBuildComment comments =
+        build.getProject().getPublishersList().get(StashPostBuildComment.class);
+
     if (comments != null) {
       String buildComment =
           result == Result.SUCCESS
@@ -68,7 +71,15 @@ public class StashBuilds {
               : comments.getBuildFailedComment();
 
       if (buildComment != null && !buildComment.isEmpty()) {
-        additionalComment = "\n\n" + buildComment;
+        String expandedComment;
+        try {
+          expandedComment =
+              Util.fixEmptyAndTrim(build.getEnvironment(listener).expand(buildComment));
+        } catch (IOException | InterruptedException e) {
+          expandedComment = "Exception while expanding '" + buildComment + "': " + e;
+        }
+
+        additionalComment = "\n\n" + expandedComment;
       }
     }
     String duration = build.getDurationString();

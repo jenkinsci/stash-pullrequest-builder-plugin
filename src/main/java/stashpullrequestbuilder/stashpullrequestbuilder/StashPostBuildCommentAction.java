@@ -3,19 +3,13 @@ package stashpullrequestbuilder.stashpullrequestbuilder;
 import hudson.model.InvisibleAction;
 
 public class StashPostBuildCommentAction extends InvisibleAction {
-  private final String buildSuccessfulComment;
-  private final String buildFailedComment;
+  // Recognize deprecated fields so they can be read in from XML, but mark
+  // them transient so they are not saved.
+  @Deprecated
+  @SuppressWarnings("unused")
+  private final transient String buildSuccessfulComment = null;
 
-  public StashPostBuildCommentAction(String buildSuccessfulComment, String buildFailedComment) {
-    this.buildSuccessfulComment = buildSuccessfulComment;
-    this.buildFailedComment = buildFailedComment;
-  }
-
-  public String getBuildSuccessfulComment() {
-    return this.buildSuccessfulComment;
-  }
-
-  public String getBuildFailedComment() {
-    return this.buildFailedComment;
-  }
+  @Deprecated
+  @SuppressWarnings("unused")
+  private final transient String buildFailedComment = null;
 }
