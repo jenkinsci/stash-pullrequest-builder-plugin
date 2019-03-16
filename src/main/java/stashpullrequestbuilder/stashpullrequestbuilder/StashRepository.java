@@ -50,13 +50,11 @@ public class StashRepository {
   public static final Pattern ADDITIONAL_PARAMETER_REGEX_PATTERN =
       Pattern.compile(ADDITIONAL_PARAMETER_REGEX);
 
-  private String projectPath;
   private StashPullRequestsBuilder builder;
   private StashBuildTrigger trigger;
   private StashApiClient client;
 
-  public StashRepository(String projectPath, StashPullRequestsBuilder builder) {
-    this.projectPath = projectPath;
+  public StashRepository(StashPullRequestsBuilder builder) {
     this.builder = builder;
   }
 
