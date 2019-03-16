@@ -11,8 +11,8 @@ import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.model.AbstractProject;
-import hudson.model.Build;
 import hudson.model.Cause;
+import hudson.model.Executor;
 import hudson.model.Item;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
@@ -20,6 +20,7 @@ import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Queue;
 import hudson.model.Result;
+import hudson.model.Run;
 import hudson.model.StringParameterValue;
 import hudson.model.queue.QueueTaskFuture;
 import hudson.model.queue.Tasks;
@@ -246,12 +247,12 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
   private void abortRunningJobsThatMatch(@Nonnull StashCause stashCause) {
     logger.fine("Looking for running jobs that match PR ID: " + stashCause.getPullRequestId());
-    for (Object o : job.getBuilds()) {
-      if (o instanceof Build) {
-        Build<?, ?> build = (Build<?, ?>) o;
-        if (build.isBuilding() && hasCauseFromTheSamePullRequest(build.getCauses(), stashCause)) {
-          logger.info("Aborting build: " + build + " since PR is outdated");
-          build.getExecutor().interrupt(Result.ABORTED);
+    for (Run<?, ?> run : job.getBuilds()) {
+      if (run.isBuilding() && hasCauseFromTheSamePullRequest(run.getCauses(), stashCause)) {
+        logger.info("Aborting build: " + run.getId() + " since PR is outdated");
+        Executor executor = run.getExecutor();
+        if (executor != null) {
+          executor.interrupt(Result.ABORTED);
         }
       }
     }
