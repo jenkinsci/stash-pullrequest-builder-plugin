@@ -2,7 +2,6 @@ package stashpullrequestbuilder.stashpullrequestbuilder;
 
 import hudson.Util;
 import hudson.model.AbstractBuild;
-import hudson.model.Cause;
 import hudson.model.Result;
 import hudson.model.TaskListener;
 import java.io.IOException;
@@ -21,16 +20,8 @@ public class StashBuilds {
     this.repository = repository;
   }
 
-  public StashCause getCause(AbstractBuild build) {
-    Cause cause = build.getCause(StashCause.class);
-    if (cause == null || !(cause instanceof StashCause)) {
-      return null;
-    }
-    return (StashCause) cause;
-  }
-
   public void onStarted(AbstractBuild<?, ?> build) {
-    StashCause cause = this.getCause(build);
+    StashCause cause = build.getCause(StashCause.class);
     if (cause == null) {
       return;
     }
@@ -42,7 +33,7 @@ public class StashBuilds {
   }
 
   public void onCompleted(AbstractBuild<?, ?> build, TaskListener listener) {
-    StashCause cause = this.getCause(build);
+    StashCause cause = build.getCause(StashCause.class);
     if (cause == null) {
       return;
     }
