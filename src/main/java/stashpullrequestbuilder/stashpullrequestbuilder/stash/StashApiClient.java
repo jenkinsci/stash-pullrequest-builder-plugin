@@ -51,8 +51,15 @@ import org.codehaus.jackson.node.ObjectNode;
 @SuppressFBWarnings("EQ_DOESNT_OVERRIDE_EQUALS")
 public class StashApiClient {
 
+  // Request timeout: maximum time between sending an HTTP request and receiving
+  // a response to it from the server.
   private static final int HTTP_REQUEST_TIMEOUT_SECONDS = 60;
+
+  // Connection timeout: maximum time for connecting to the HTTP server.
   private static final int HTTP_CONNECTION_TIMEOUT_SECONDS = 15;
+
+  // Socket timeout: maximum period of inactivity between two data packets
+  // arriving to the client once the connection is established.
   private static final int HTTP_SOCKET_TIMEOUT_SECONDS = 30;
 
   private static final Logger logger =
@@ -190,12 +197,8 @@ public class StashApiClient {
   private HttpClient getHttpClient() {
     HttpClient client = new HttpClient();
     HttpParams httpParams = client.getParams();
-    // ConnectionTimeout : This denotes the time elapsed before the connection established or Server
-    // responded to connection request.
     httpParams.setParameter(
         CoreConnectionPNames.CONNECTION_TIMEOUT, HTTP_CONNECTION_TIMEOUT_SECONDS * 1000);
-    // SoTimeout : Maximum period inactivity between two consecutive data packets arriving at client
-    // side after connection is established.
     httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, HTTP_SOCKET_TIMEOUT_SECONDS * 1000);
 
     //        if (Jenkins.getInstance() != null) {
