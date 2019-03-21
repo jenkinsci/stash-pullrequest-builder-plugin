@@ -94,8 +94,7 @@ public class StashBuilds {
         duration);
 
     // Merge PR
-    StashBuildTrigger trig = StashBuildTrigger.getTrigger(build.getProject());
-    if (trig.getMergeOnSuccess() && build.getResult() == Result.SUCCESS) {
+    if (trigger.getMergeOnSuccess() && build.getResult() == Result.SUCCESS) {
       boolean mergeStat =
           repository.mergePullRequest(cause.getPullRequestId(), cause.getPullRequestVersion());
       if (mergeStat == true) {
