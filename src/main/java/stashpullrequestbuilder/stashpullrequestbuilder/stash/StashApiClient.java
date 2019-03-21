@@ -1,6 +1,5 @@
 package stashpullrequestbuilder.stashpullrequestbuilder.stash;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -46,7 +45,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 
 /** Created by Nathan McCarthy */
-@SuppressFBWarnings("EQ_DOESNT_OVERRIDE_EQUALS")
 public class StashApiClient {
 
   private static final int HTTP_REQUEST_TIMEOUT_SECONDS = 60;
