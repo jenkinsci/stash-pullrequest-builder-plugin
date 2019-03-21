@@ -46,7 +46,7 @@ import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 /** Created by Nathan McCarthy */
-@SuppressFBWarnings({"WMI_WRONG_MAP_ITERATOR", "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"})
+@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
   private static final Logger logger =
       Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
@@ -220,8 +220,8 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     Map<String, String> additionalParameters = cause.getAdditionalParameters();
     if (additionalParameters != null) {
-      for (String parameter : additionalParameters.keySet()) {
-        values.add(new StringParameterValue(parameter, additionalParameters.get(parameter)));
+      for (Map.Entry<String, String> parameter : additionalParameters.entrySet()) {
+        values.add(new StringParameterValue(parameter.getKey(), parameter.getValue()));
       }
     }
 

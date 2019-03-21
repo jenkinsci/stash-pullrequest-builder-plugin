@@ -2,7 +2,6 @@ package stashpullrequestbuilder.stashpullrequestbuilder;
 
 import static java.lang.String.format;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.Result;
 import java.lang.invoke.MethodHandles;
 import java.util.AbstractMap;
@@ -22,7 +21,6 @@ import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestRes
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestResponseValueRepository;
 
 /** Created by Nathan McCarthy */
-@SuppressFBWarnings("WMI_WRONG_MAP_ITERATOR")
 public class StashRepository {
   private static final Logger logger =
       Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
@@ -144,8 +142,8 @@ public class StashRepository {
         }
 
         Map<String, String> parameters = getParametersFromContent(content);
-        for (String key : parameters.keySet()) {
-          result.put(key, parameters.get(key));
+        for (Map.Entry<String, String> parameter : parameters.entrySet()) {
+          result.put(parameter.getKey(), parameter.getValue());
         }
       }
       return result;
