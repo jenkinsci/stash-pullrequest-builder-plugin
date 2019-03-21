@@ -24,8 +24,9 @@ public class StashPostBuildComment extends Notifier implements Describable<Publi
     this.buildFailedComment = buildFailedComment;
   }
 
+  @Override
   public BuildStepMonitor getRequiredMonitorService() {
-    return BuildStepMonitor.BUILD;
+    return BuildStepMonitor.NONE;
   }
 
   public String getBuildSuccessfulComment() {
