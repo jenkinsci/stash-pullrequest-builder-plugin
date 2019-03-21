@@ -4,6 +4,7 @@ import static java.lang.String.format;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.Result;
+import java.lang.invoke.MethodHandles;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,7 +24,8 @@ import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestRes
 /** Created by Nathan McCarthy */
 @SuppressFBWarnings("WMI_WRONG_MAP_ITERATOR")
 public class StashRepository {
-  private static final Logger logger = Logger.getLogger(StashRepository.class.getName());
+  private static final Logger logger =
+      Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
   public static final String BUILD_START_MARKER = "[*BuildStarted* **%s**] %s into %s";
   public static final String BUILD_FINISH_MARKER = "[*BuildFinished* **%s**] %s into %s";
 

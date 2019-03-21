@@ -27,6 +27,7 @@ import hudson.security.ACL;
 import hudson.triggers.Trigger;
 import hudson.triggers.TriggerDescriptor;
 import hudson.util.ListBoxModel;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +48,8 @@ import org.kohsuke.stapler.StaplerRequest;
 /** Created by Nathan McCarthy */
 @SuppressFBWarnings({"WMI_WRONG_MAP_ITERATOR", "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"})
 public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
-  private static final Logger logger = Logger.getLogger(StashBuildTrigger.class.getName());
+  private static final Logger logger =
+      Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
   private final String projectPath;
   private final String cron;
   private final String stashHost;

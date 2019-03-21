@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.lang.invoke.MethodHandles;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -53,7 +54,8 @@ public class StashApiClient {
   private static final int HTTP_CONNECTION_TIMEOUT_SECONDS = 15;
   private static final int HTTP_SOCKET_TIMEOUT_SECONDS = 15;
 
-  private static final Logger logger = Logger.getLogger(StashApiClient.class.getName());
+  private static final Logger logger =
+      Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
   private static final ObjectMapper mapper = new ObjectMapper();
 
   private String apiBaseUrl;

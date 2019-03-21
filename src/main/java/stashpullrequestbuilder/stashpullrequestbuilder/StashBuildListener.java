@@ -4,13 +4,15 @@ import hudson.Extension;
 import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
 import hudson.model.listeners.RunListener;
+import java.lang.invoke.MethodHandles;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 
 /** Created by Nathan McCarthy */
 @Extension
 public class StashBuildListener extends RunListener<AbstractBuild> {
-  private static final Logger logger = Logger.getLogger(StashBuildTrigger.class.getName());
+  private static final Logger logger =
+      Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
 
   @Override
   public void onStarted(AbstractBuild abstractBuild, TaskListener listener) {

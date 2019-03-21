@@ -6,13 +6,15 @@ import hudson.model.Cause;
 import hudson.model.Result;
 import hudson.model.TaskListener;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.JenkinsLocationConfiguration;
 
 /** Created by Nathan McCarthy */
 public class StashBuilds {
-  private static final Logger logger = Logger.getLogger(StashBuilds.class.getName());
+  private static final Logger logger =
+      Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
   private StashBuildTrigger trigger;
   private StashRepository repository;
 
