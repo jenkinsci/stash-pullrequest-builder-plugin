@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
@@ -142,6 +143,7 @@ public class StashApiClient {
     deleteRequest(path);
   }
 
+  @Nullable
   public StashPullRequestComment postPullRequestComment(String pullRequestId, String comment) {
     String path = pullRequestPath(pullRequestId) + "/comments";
     try {
@@ -156,6 +158,7 @@ public class StashApiClient {
     return null;
   }
 
+  @Nullable
   public StashPullRequestMergeableResponse getPullRequestMergeStatus(String pullRequestId) {
     String path = pullRequestPath(pullRequestId) + "/merge";
     try {
