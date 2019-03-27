@@ -11,7 +11,7 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 
 @Extension
-public class StashAditionalParameterEnvironmentContributor extends EnvironmentContributor {
+public class StashBuildEnvironmentContributor extends EnvironmentContributor {
   @Override
   public void buildEnvironmentFor(
       @Nonnull Run r, @Nonnull EnvVars envs, @Nonnull TaskListener listener)
