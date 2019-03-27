@@ -17,6 +17,7 @@ public class StashPullRequestActivity implements Comparable<StashPullRequestActi
     this.comment = comment;
   }
 
+  @Override
   public int compareTo(StashPullRequestActivity target) {
     if (this.comment == null || target.getComment() == null) {
       return -1;
