@@ -233,7 +233,7 @@ public class StashRepository {
     return this.client.mergePullRequest(pullRequestId, version);
   }
 
-  private Boolean isPullRequestMergable(StashPullRequestResponseValue pullRequest) {
+  private boolean isPullRequestMergable(StashPullRequestResponseValue pullRequest) {
     if (trigger.isCheckMergeable()
         || trigger.isCheckNotConflicted()
         || trigger.isCheckProbeMergeStatus()) {
