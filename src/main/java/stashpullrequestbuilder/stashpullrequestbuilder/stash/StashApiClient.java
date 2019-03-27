@@ -193,12 +193,10 @@ public class StashApiClient {
     // ConnectionTimeout : This denotes the time elapsed before the connection established or Server
     // responded to connection request.
     httpParams.setParameter(
-        CoreConnectionPNames.CONNECTION_TIMEOUT,
-        StashApiClient.HTTP_CONNECTION_TIMEOUT_SECONDS * 1000);
+        CoreConnectionPNames.CONNECTION_TIMEOUT, HTTP_CONNECTION_TIMEOUT_SECONDS * 1000);
     // SoTimeout : Maximum period inactivity between two consecutive data packets arriving at client
     // side after connection is established.
-    httpParams.setParameter(
-        CoreConnectionPNames.SO_TIMEOUT, StashApiClient.HTTP_SOCKET_TIMEOUT_SECONDS * 1000);
+    httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, HTTP_SOCKET_TIMEOUT_SECONDS * 1000);
 
     //        if (Jenkins.getInstance() != null) {
     //            ProxyConfiguration proxy = Jenkins.getInstance().proxy;
@@ -275,7 +273,7 @@ public class StashApiClient {
               }.init(client, httpget));
       thread = new Thread(httpTask);
       thread.start();
-      response = httpTask.get((long) StashApiClient.HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+      response = httpTask.get(HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
     } catch (TimeoutException e) {
       e.printStackTrace();
@@ -332,7 +330,7 @@ public class StashApiClient {
               }.init(client, httppost));
       thread = new Thread(httpTask);
       thread.start();
-      res = httpTask.get((long) StashApiClient.HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+      res = httpTask.get(HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
     } catch (TimeoutException e) {
       e.printStackTrace();
@@ -423,7 +421,7 @@ public class StashApiClient {
               }.init(client, httppost));
       thread = new Thread(httpTask);
       thread.start();
-      response = httpTask.get((long) StashApiClient.HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+      response = httpTask.get(HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
     } catch (TimeoutException e) {
       e.printStackTrace();
