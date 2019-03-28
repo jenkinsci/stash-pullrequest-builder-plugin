@@ -7,6 +7,7 @@ import hudson.model.listeners.RunListener;
 import java.lang.invoke.MethodHandles;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
+import jenkins.model.ParameterizedJobMixIn;
 
 /** Created by Nathan McCarthy */
 @Extension
@@ -17,7 +18,8 @@ public class StashBuildListener extends RunListener<AbstractBuild<?, ?>> {
   @Override
   public void onStarted(AbstractBuild<?, ?> abstractBuild, TaskListener listener) {
     logger.info("BuildListener onStarted called.");
-    StashBuildTrigger trigger = StashBuildTrigger.getTrigger(abstractBuild.getProject());
+    StashBuildTrigger trigger =
+        ParameterizedJobMixIn.getTrigger(abstractBuild.getParent(), StashBuildTrigger.class);
     if (trigger == null) {
       return;
     }
@@ -26,7 +28,8 @@ public class StashBuildListener extends RunListener<AbstractBuild<?, ?>> {
 
   @Override
   public void onCompleted(AbstractBuild<?, ?> abstractBuild, @Nonnull TaskListener listener) {
-    StashBuildTrigger trigger = StashBuildTrigger.getTrigger(abstractBuild.getProject());
+    StashBuildTrigger trigger =
+        ParameterizedJobMixIn.getTrigger(abstractBuild.getParent(), StashBuildTrigger.class);
     if (trigger == null) {
       return;
     }

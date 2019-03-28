@@ -208,10 +208,6 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     }
   }
 
-  public static StashBuildTrigger getTrigger(AbstractProject<?, ?> project) {
-    return project.getTrigger(StashBuildTrigger.class);
-  }
-
   public StashPullRequestsBuilder getBuilder() {
     return this.stashPullRequestsBuilder;
   }
