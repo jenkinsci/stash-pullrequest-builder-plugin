@@ -294,14 +294,13 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
   @Override
   public void run() {
-    if (stashPullRequestsBuilder == null) {
+    if (job == null) {
       logger.info("Not ready to run.");
       return;
     }
 
-    AbstractProject<?, ?> project = stashPullRequestsBuilder.getProject();
-    if (project.isDisabled()) {
-      logger.fine(format("Project disabled, skipping build (%s).", project.getName()));
+    if (!job.isBuildable()) {
+      logger.fine(format("Job is not buildable, skipping build (%s).", job.getName()));
       return;
     }
 
