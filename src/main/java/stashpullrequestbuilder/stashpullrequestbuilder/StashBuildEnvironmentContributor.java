@@ -16,23 +16,24 @@ public class StashBuildEnvironmentContributor extends EnvironmentContributor {
   public void buildEnvironmentFor(
       @Nonnull Run r, @Nonnull EnvVars envs, @Nonnull TaskListener listener)
       throws IOException, InterruptedException {
+    Run<?, ?> run = r;
     if (r instanceof AbstractBuild) {
       AbstractBuild<?, ?> build = (AbstractBuild<?, ?>) r;
-      AbstractBuild<?, ?> rootBuild = build.getRootBuild();
+      run = build.getRootBuild();
+    }
 
-      StashCause cause = rootBuild.getCause(StashCause.class);
-      if (cause != null) {
-        putEnvVar(envs, "sourceBranch", cause.getSourceBranch());
-        putEnvVar(envs, "targetBranch", cause.getTargetBranch());
-        putEnvVar(envs, "sourceRepositoryOwner", cause.getSourceRepositoryOwner());
-        putEnvVar(envs, "sourceRepositoryName", cause.getSourceRepositoryName());
-        putEnvVar(envs, "pullRequestId", cause.getPullRequestId());
-        putEnvVar(envs, "destinationRepositoryOwner", cause.getDestinationRepositoryOwner());
-        putEnvVar(envs, "destinationRepositoryName", cause.getDestinationRepositoryName());
-        putEnvVar(envs, "pullRequestTitle", cause.getPullRequestTitle());
-        putEnvVar(envs, "sourceCommitHash", cause.getSourceCommitHash());
-        putEnvVar(envs, "destinationCommitHash", cause.getDestinationCommitHash());
-      }
+    StashCause cause = run.getCause(StashCause.class);
+    if (cause != null) {
+      putEnvVar(envs, "sourceBranch", cause.getSourceBranch());
+      putEnvVar(envs, "targetBranch", cause.getTargetBranch());
+      putEnvVar(envs, "sourceRepositoryOwner", cause.getSourceRepositoryOwner());
+      putEnvVar(envs, "sourceRepositoryName", cause.getSourceRepositoryName());
+      putEnvVar(envs, "pullRequestId", cause.getPullRequestId());
+      putEnvVar(envs, "destinationRepositoryOwner", cause.getDestinationRepositoryOwner());
+      putEnvVar(envs, "destinationRepositoryName", cause.getDestinationRepositoryName());
+      putEnvVar(envs, "pullRequestTitle", cause.getPullRequestTitle());
+      putEnvVar(envs, "sourceCommitHash", cause.getSourceCommitHash());
+      putEnvVar(envs, "destinationCommitHash", cause.getDestinationCommitHash());
     }
 
     super.buildEnvironmentFor(r, envs, listener);

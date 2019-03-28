@@ -73,8 +73,18 @@ public class StashBuildEnvironmentContributorTest {
   }
 
   @Test
-  public void noVariablesForRun() throws Exception {
+  public void populatesVariablesForRun() throws Exception {
     Run<?, ?> run = mock(Run.class);
+    when(run.getCause(StashCause.class)).thenReturn(cause);
+
+    contributor.buildEnvironmentFor(run, envVars, listener);
+    checkEnvVars();
+  }
+
+  @Test
+  public void noVariablesForRunWithoutCause() throws Exception {
+    Run<?, ?> run = mock(Run.class);
+    when(run.getCause(StashCause.class)).thenReturn(null);
 
     contributor.buildEnvironmentFor(run, envVars, listener);
     assertThat(envVars, is(anEmptyMap()));
