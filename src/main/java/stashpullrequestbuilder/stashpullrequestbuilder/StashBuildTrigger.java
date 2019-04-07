@@ -39,6 +39,7 @@ import javax.annotation.Nullable;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -71,9 +72,6 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
   private boolean checkProbeMergeStatus;
 
   private transient StashPullRequestsBuilder stashPullRequestsBuilder;
-
-  @Extension
-  public static final StashBuildTriggerDescriptor descriptor = new StashBuildTriggerDescriptor();
 
   @DataBoundConstructor
   public StashBuildTrigger(
@@ -332,6 +330,8 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     return onlyBuildOnComment;
   }
 
+  @Extension
+  @Symbol("stashBuildTrigger")
   public static final class StashBuildTriggerDescriptor extends TriggerDescriptor {
     public StashBuildTriggerDescriptor() {
       load();
