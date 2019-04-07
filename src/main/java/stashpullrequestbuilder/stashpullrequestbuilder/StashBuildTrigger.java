@@ -133,7 +133,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
   }
 
   // Needed for Jelly Config
-  public String getcredentialsId() {
+  public String getCredentialsId() {
     return this.credentialsId;
   }
 
