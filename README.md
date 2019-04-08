@@ -11,7 +11,7 @@ This plugin was inspired by the GitHub & BitBucket pull request builder plugins.
 
 ## Prerequisites
 
-- Jenkins 1.532 or higher.
+- Jenkins 2.60.1 or higher.
 - [Git Plugin](https://wiki.jenkins-ci.org/display/JENKINS/Git+Plugin)
 
 ## Parameter variables
