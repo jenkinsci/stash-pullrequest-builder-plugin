@@ -17,7 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestComment;
-import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestMergableResponse;
+import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestMergeableResponse;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestResponseValue;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestResponseValueRepository;
 
@@ -233,7 +233,7 @@ public class StashRepository {
     return this.client.mergePullRequest(pullRequestId, version);
   }
 
-  private boolean isPullRequestMergable(StashPullRequestResponseValue pullRequest) {
+  private boolean isPullRequestMergeable(StashPullRequestResponseValue pullRequest) {
     if (trigger.isCheckMergeable()
         || trigger.isCheckNotConflicted()
         || trigger.isCheckProbeMergeStatus()) {
@@ -242,15 +242,15 @@ public class StashRepository {
        * JSON answer, parsed into fields of the "response" object.
        * See example in StashApiClientTest.java.
        */
-      StashPullRequestMergableResponse mergable =
+      StashPullRequestMergeableResponse mergeable =
           client.getPullRequestMergeStatus(pullRequest.getId());
       boolean res = true;
       if (trigger.isCheckMergeable()) {
-        res &= mergable.getCanMerge();
+        res &= mergeable.getCanMerge();
       }
 
       if (trigger.isCheckNotConflicted()) {
-        res &= !mergable.getConflicted();
+        res &= !mergeable.getConflicted();
       }
 
       /* The trigger.isCheckProbeMergeStatus() consulted above
@@ -322,7 +322,7 @@ public class StashRepository {
         return false;
       }
 
-      if (!isPullRequestMergable(pullRequest)) {
+      if (!isPullRequestMergeable(pullRequest)) {
         logger.info("Skipping PR: " + pullRequest.getId() + " as cannot be merged");
         return false;
       }

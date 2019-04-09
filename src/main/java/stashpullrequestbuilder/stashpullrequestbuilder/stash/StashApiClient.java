@@ -156,7 +156,7 @@ public class StashApiClient {
     return null;
   }
 
-  public StashPullRequestMergableResponse getPullRequestMergeStatus(String pullRequestId) {
+  public StashPullRequestMergeableResponse getPullRequestMergeStatus(String pullRequestId) {
     String path = pullRequestPath(pullRequestId) + "/merge";
     try {
       String response = getRequest(path);
@@ -477,10 +477,10 @@ public class StashApiClient {
     return parsedResponse;
   }
 
-  protected static StashPullRequestMergableResponse parsePullRequestMergeStatus(String response)
+  protected static StashPullRequestMergeableResponse parsePullRequestMergeStatus(String response)
       throws IOException {
-    StashPullRequestMergableResponse parsedResponse;
-    parsedResponse = mapper.readValue(response, StashPullRequestMergableResponse.class);
+    StashPullRequestMergeableResponse parsedResponse;
+    parsedResponse = mapper.readValue(response, StashPullRequestMergeableResponse.class);
     return parsedResponse;
   }
 
