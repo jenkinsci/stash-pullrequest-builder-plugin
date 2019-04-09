@@ -207,9 +207,8 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     super.start(project, newInstance);
   }
 
-  public static StashBuildTrigger getTrigger(AbstractProject project) {
-    Trigger trigger = project.getTrigger(StashBuildTrigger.class);
-    return (StashBuildTrigger) trigger;
+  public static StashBuildTrigger getTrigger(AbstractProject<?, ?> project) {
+    return project.getTrigger(StashBuildTrigger.class);
   }
 
   public StashPullRequestsBuilder getBuilder() {
@@ -249,7 +248,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     logger.fine("Looking for running jobs that match PR ID: " + stashCause.getPullRequestId());
     for (Object o : job.getBuilds()) {
       if (o instanceof Build) {
-        Build build = (Build) o;
+        Build<?, ?> build = (Build<?, ?>) o;
         if (build.isBuilding() && hasCauseFromTheSamePullRequest(build.getCauses(), stashCause)) {
           logger.info("Aborting build: " + build + " since PR is outdated");
           build.getExecutor().interrupt(Result.ABORTED);
@@ -300,7 +299,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
       return;
     }
 
-    AbstractProject project = stashPullRequestsBuilder.getProject();
+    AbstractProject<?, ?> project = stashPullRequestsBuilder.getProject();
     if (project.isDisabled()) {
       logger.fine(format("Project disabled, skipping build (%s).", project.getName()));
       return;

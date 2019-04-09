@@ -10,12 +10,12 @@ import javax.annotation.Nonnull;
 
 /** Created by Nathan McCarthy */
 @Extension
-public class StashBuildListener extends RunListener<AbstractBuild> {
+public class StashBuildListener extends RunListener<AbstractBuild<?, ?>> {
   private static final Logger logger =
       Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
 
   @Override
-  public void onStarted(AbstractBuild abstractBuild, TaskListener listener) {
+  public void onStarted(AbstractBuild<?, ?> abstractBuild, TaskListener listener) {
     logger.info("BuildListener onStarted called.");
     StashBuildTrigger trigger = StashBuildTrigger.getTrigger(abstractBuild.getProject());
     if (trigger == null) {
@@ -25,7 +25,7 @@ public class StashBuildListener extends RunListener<AbstractBuild> {
   }
 
   @Override
-  public void onCompleted(AbstractBuild abstractBuild, @Nonnull TaskListener listener) {
+  public void onCompleted(AbstractBuild<?, ?> abstractBuild, @Nonnull TaskListener listener) {
     StashBuildTrigger trigger = StashBuildTrigger.getTrigger(abstractBuild.getProject());
     if (trigger == null) {
       return;

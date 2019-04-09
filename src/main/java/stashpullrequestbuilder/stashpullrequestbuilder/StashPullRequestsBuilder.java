@@ -19,7 +19,7 @@ public class StashPullRequestsBuilder {
   private StashBuilds builds;
 
   public StashPullRequestsBuilder(
-      @Nonnull AbstractProject project, @Nonnull StashBuildTrigger trigger) {
+      @Nonnull AbstractProject<?, ?> project, @Nonnull StashBuildTrigger trigger) {
     this.project = project;
     this.trigger = trigger;
     this.repository = new StashRepository(trigger.getProjectPath(), this);
