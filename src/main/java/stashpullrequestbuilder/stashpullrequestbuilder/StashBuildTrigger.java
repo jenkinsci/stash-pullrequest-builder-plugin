@@ -331,7 +331,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
   }
 
   @Extension
-  @Symbol("stashBuildTrigger")
+  @Symbol("stashPullRequestBuilder")
   public static final class StashBuildTriggerDescriptor extends TriggerDescriptor {
     public StashBuildTriggerDescriptor() {
       load();
