@@ -1,6 +1,7 @@
 package stashpullrequestbuilder.stashpullrequestbuilder.stash;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -25,7 +26,7 @@ public class StashPullRequestResponseValueRepositoryTest {
     // Test on null values
     stashPullRequestResponseValueRepository.setId(null);
     String branchName = stashPullRequestResponseValueRepository.getBranch().getName();
-    assertEquals("", branchName);
+    assertThat(branchName, is(emptyString()));
   }
 
   @Test
@@ -33,7 +34,7 @@ public class StashPullRequestResponseValueRepositoryTest {
     // Test on empty String
     stashPullRequestResponseValueRepository.setId("");
     String branchName = stashPullRequestResponseValueRepository.getBranch().getName();
-    assertEquals("", branchName);
+    assertThat(branchName, is(emptyString()));
   }
 
   @Test
@@ -42,7 +43,7 @@ public class StashPullRequestResponseValueRepositoryTest {
     // Test if the branch name get extracted the right way. Allowing for '/' in the branch name
     stashPullRequestResponseValueRepository.setId("refs/heads/release/1.0.0");
     String branchNameWithSlash = stashPullRequestResponseValueRepository.getBranch().getName();
-    assertEquals("release/1.0.0", branchNameWithSlash);
+    assertThat(branchNameWithSlash, is("release/1.0.0"));
   }
 
   @Test
@@ -51,7 +52,7 @@ public class StashPullRequestResponseValueRepositoryTest {
     // Normal case, a branch name without '/' characters
     stashPullRequestResponseValueRepository.setId("refs/heads/master");
     String branchNameWithoutSlash = stashPullRequestResponseValueRepository.getBranch().getName();
-    assertEquals("master", branchNameWithoutSlash);
+    assertThat(branchNameWithoutSlash, is("master"));
   }
 
   @Test
@@ -60,6 +61,6 @@ public class StashPullRequestResponseValueRepositoryTest {
     // Normal case, but now with a weird pull request identifier
     stashPullRequestResponseValueRepository.setId("refs/weird/master");
     String branchNameWithoutSlash = stashPullRequestResponseValueRepository.getBranch().getName();
-    assertEquals("weird/master", branchNameWithoutSlash);
+    assertThat(branchNameWithoutSlash, is("weird/master"));
   }
 }
