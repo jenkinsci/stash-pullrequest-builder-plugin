@@ -197,6 +197,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
   @Override
   public void start(AbstractProject<?, ?> project, boolean newInstance) {
+    super.start(project, newInstance);
     try {
       Objects.requireNonNull(project, "project is null");
       this.stashPullRequestsBuilder = new StashPullRequestsBuilder(project, this);
@@ -204,7 +205,6 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
       logger.log(Level.SEVERE, "Can't start trigger", e);
       return;
     }
-    super.start(project, newInstance);
   }
 
   public static StashBuildTrigger getTrigger(AbstractProject<?, ?> project) {
