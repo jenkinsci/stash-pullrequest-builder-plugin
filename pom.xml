@@ -90,6 +90,11 @@
       <artifactId>symbol-annotation</artifactId>
       <version>1.3</version>
     </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci</groupId>
+      <artifactId>annotation-indexer</artifactId>
+      <version>1.11</version>
+    </dependency>
   </dependencies>
 
   <repositories>
