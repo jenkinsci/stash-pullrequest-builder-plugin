@@ -224,18 +224,18 @@ public class StashApiClient {
     HttpClient client = getHttpClient();
     client.getState().setCredentials(AuthScope.ANY, credentials);
 
-    GetMethod httpget = new GetMethod(path);
+    GetMethod request = new GetMethod(path);
     // http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html; section 14.10.
     // tells the server that we want it to close the connection when it has sent the response.
     // address large amount of close_wait sockets client and fin sockets server side
-    httpget.setRequestHeader("Connection", "close");
+    request.setRequestHeader("Connection", "close");
 
     client.getParams().setAuthenticationPreemptive(true);
     String response = null;
     FutureTask<String> httpTask = null;
     Thread thread;
     try {
-      // Run the http request in a future task so we have the opportunity
+      // Run the HTTP request in a future task so we have the opportunity
       // to cancel it if it gets hung up; which is possible if stuck at
       // socket native layer.  see issue JENKINS-30558
       httpTask =
@@ -243,24 +243,24 @@ public class StashApiClient {
               new Callable<String>() {
 
                 private HttpClient client;
-                private GetMethod httpget;
+                private GetMethod request;
 
                 @Override
                 public String call() throws Exception {
                   String response = null;
                   int responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
-                  responseCode = client.executeMethod(httpget);
+                  responseCode = client.executeMethod(request);
                   if (!validResponseCode(responseCode)) {
                     logger.log(
                         Level.SEVERE,
-                        "Failing to get response from Stash PR GET" + httpget.getPath());
+                        "Failing to get response from Stash PR GET" + request.getPath());
                     throw new RuntimeException(
                         "Didn't get a 200 response from Stash PR GET! Response; '"
                             + HttpStatus.getStatusText(responseCode)
                             + "' with message; "
                             + response);
                   }
-                  InputStream responseBodyAsStream = httpget.getResponseBodyAsStream();
+                  InputStream responseBodyAsStream = request.getResponseBodyAsStream();
                   StringWriter stringWriter = new StringWriter();
                   IOUtils.copy(responseBodyAsStream, stringWriter, "UTF-8");
                   response = stringWriter.toString();
@@ -268,25 +268,25 @@ public class StashApiClient {
                   return response;
                 }
 
-                public Callable<String> init(HttpClient client, GetMethod httpget) {
+                public Callable<String> init(HttpClient client, GetMethod request) {
                   this.client = client;
-                  this.httpget = httpget;
+                  this.request = request;
                   return this;
                 }
-              }.init(client, httpget));
+              }.init(client, request));
       thread = new Thread(httpTask);
       thread.start();
       response = httpTask.get(HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
     } catch (TimeoutException e) {
       e.printStackTrace();
-      httpget.abort();
+      request.abort();
       throw new RuntimeException(e);
     } catch (Exception e) {
       e.printStackTrace();
       throw new RuntimeException(e);
     } finally {
-      httpget.releaseConnection();
+      request.releaseConnection();
     }
     logger.log(Level.FINEST, "PR-GET-RESPONSE:" + response);
     return response;
@@ -296,19 +296,19 @@ public class StashApiClient {
     HttpClient client = getHttpClient();
     client.getState().setCredentials(AuthScope.ANY, credentials);
 
-    DeleteMethod httppost = new DeleteMethod(path);
+    DeleteMethod request = new DeleteMethod(path);
     // http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html; section 14.10.
     // tells the server that we want it to close the connection when it has sent the response.
     // address large amount of close_wait sockets client and fin sockets server side
-    httppost.setRequestHeader("Connection", "close");
+    request.setRequestHeader("Connection", "close");
 
     client.getParams().setAuthenticationPreemptive(true);
-    int res = -1;
+    int response = -1;
     FutureTask<Integer> httpTask = null;
     Thread thread;
 
     try {
-      // Run the http request in a future task so we have the opportunity
+      // Run the HTTP request in a future task so we have the opportunity
       // to cancel it if it gets hung up; which is possible if stuck at
       // socket native layer.  see issue JENKINS-30558
       httpTask =
@@ -316,37 +316,37 @@ public class StashApiClient {
               new Callable<Integer>() {
 
                 private HttpClient client;
-                private DeleteMethod httppost;
+                private DeleteMethod request;
 
                 @Override
                 public Integer call() throws Exception {
-                  int res = -1;
-                  res = client.executeMethod(httppost);
-                  return res;
+                  int response = -1;
+                  response = client.executeMethod(request);
+                  return response;
                 }
 
-                public Callable<Integer> init(HttpClient client, DeleteMethod httppost) {
+                public Callable<Integer> init(HttpClient client, DeleteMethod request) {
                   this.client = client;
-                  this.httppost = httppost;
+                  this.request = request;
                   return this;
                 }
-              }.init(client, httppost));
+              }.init(client, request));
       thread = new Thread(httpTask);
       thread.start();
-      res = httpTask.get(HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+      response = httpTask.get(HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
     } catch (TimeoutException e) {
       e.printStackTrace();
-      httppost.abort();
+      request.abort();
       throw new RuntimeException(e);
     } catch (Exception e) {
       e.printStackTrace();
       throw new RuntimeException(e);
     } finally {
-      httppost.releaseConnection();
+      request.releaseConnection();
     }
 
-    logger.log(Level.FINE, "Delete comment {" + path + "} returned result code; " + res);
+    logger.log(Level.FINE, "Delete comment {" + path + "} returned result code; " + response);
   }
 
   private String postRequest(String path, String comment) throws UnsupportedEncodingException {
@@ -354,12 +354,12 @@ public class StashApiClient {
     HttpClient client = getHttpClient();
     client.getState().setCredentials(AuthScope.ANY, credentials);
 
-    PostMethod httppost = new PostMethod(path);
+    PostMethod request = new PostMethod(path);
     // http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html; section 14.10.
     // tells the server that we want it to close the connection when it has sent the response.
     // address large amount of close_wait sockets client and fin sockets server side
-    httppost.setRequestHeader("Connection", "close");
-    httppost.setRequestHeader("X-Atlassian-Token", "no-check"); // xsrf
+    request.setRequestHeader("Connection", "close");
+    request.setRequestHeader("X-Atlassian-Token", "no-check"); // xsrf
 
     if (comment != null) {
       ObjectNode node = mapper.getNodeFactory().objectNode();
@@ -372,7 +372,7 @@ public class StashApiClient {
       } catch (IOException e) {
         e.printStackTrace();
       }
-      httppost.setRequestEntity(requestEntity);
+      request.setRequestEntity(requestEntity);
     }
 
     client.getParams().setAuthenticationPreemptive(true);
@@ -381,7 +381,7 @@ public class StashApiClient {
     Thread thread;
 
     try {
-      // Run the http request in a future task so we have the opportunity
+      // Run the HTTP request in a future task so we have the opportunity
       // to cancel it if it gets hung up; which is possible if stuck at
       // socket native layer.  see issue JENKINS-30558
       httpTask =
@@ -389,25 +389,25 @@ public class StashApiClient {
               new Callable<String>() {
 
                 private HttpClient client;
-                private PostMethod httppost;
+                private PostMethod request;
 
                 @Override
                 public String call() throws Exception {
                   String response = "";
                   int responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
 
-                  responseCode = client.executeMethod(httppost);
+                  responseCode = client.executeMethod(request);
                   if (!validResponseCode(responseCode)) {
                     logger.log(
                         Level.SEVERE,
-                        "Failing to get response from Stash PR POST" + httppost.getPath());
+                        "Failing to get response from Stash PR POST" + request.getPath());
                     throw new RuntimeException(
                         "Didn't get a 200 response from Stash PR POST! Response; '"
                             + HttpStatus.getStatusText(responseCode)
                             + "' with message; "
                             + response);
                   }
-                  InputStream responseBodyAsStream = httppost.getResponseBodyAsStream();
+                  InputStream responseBodyAsStream = request.getResponseBodyAsStream();
                   StringWriter stringWriter = new StringWriter();
                   IOUtils.copy(responseBodyAsStream, stringWriter, "UTF-8");
                   response = stringWriter.toString();
@@ -416,25 +416,25 @@ public class StashApiClient {
                   return response;
                 }
 
-                public Callable<String> init(HttpClient client, PostMethod httppost) {
+                public Callable<String> init(HttpClient client, PostMethod request) {
                   this.client = client;
-                  this.httppost = httppost;
+                  this.request = request;
                   return this;
                 }
-              }.init(client, httppost));
+              }.init(client, request));
       thread = new Thread(httpTask);
       thread.start();
       response = httpTask.get(HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
     } catch (TimeoutException e) {
       e.printStackTrace();
-      httppost.abort();
+      request.abort();
       throw new RuntimeException(e);
     } catch (Exception e) {
       e.printStackTrace();
       throw new RuntimeException(e);
     } finally {
-      httppost.releaseConnection();
+      request.releaseConnection();
     }
 
     logger.log(Level.FINEST, "PR-POST-RESPONSE:" + response);
