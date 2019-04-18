@@ -26,28 +26,25 @@ import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestRes
 public class StashRepository {
   private static final Logger logger =
       Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
-  public static final String BUILD_START_MARKER = "[*BuildStarted* **%s**] %s into %s";
-  public static final String BUILD_FINISH_MARKER = "[*BuildFinished* **%s**] %s into %s";
+  private static final String BUILD_START_MARKER = "[*BuildStarted* **%s**] %s into %s";
+  private static final String BUILD_FINISH_MARKER = "[*BuildFinished* **%s**] %s into %s";
 
-  public static final String BUILD_START_REGEX =
+  private static final String BUILD_START_REGEX =
       "\\[\\*BuildStarted\\* \\*\\*%s\\*\\*\\] ([0-9a-fA-F]+) into ([0-9a-fA-F]+)";
-  public static final String BUILD_FINISH_REGEX =
+  private static final String BUILD_FINISH_REGEX =
       "\\[\\*BuildFinished\\* \\*\\*%s\\*\\*\\] ([0-9a-fA-F]+) into ([0-9a-fA-F]+)";
 
-  public static final String BUILD_FINISH_SENTENCE =
+  private static final String BUILD_FINISH_SENTENCE =
       BUILD_FINISH_MARKER + " %n%n **[%s](%s)** - Build *#%d* which took *%s*";
-  public static final String BUILD_START_SENTENCE =
-      BUILD_START_MARKER + " %n%n **[%s](%s)** - Build *#%d*";
 
-  public static final String BUILD_SUCCESS_COMMENT = "✓ BUILD SUCCESS";
-  public static final String BUILD_FAILURE_COMMENT = "✕ BUILD FAILURE";
-  public static final String BUILD_RUNNING_COMMENT = "BUILD RUNNING...";
-  public static final String BUILD_UNSTABLE_COMMENT = "⁉ BUILD UNSTABLE";
-  public static final String BUILD_ABORTED_COMMENT = "‼ BUILD ABORTED";
-  public static final String BUILD_NOTBUILT_COMMENT = "✕ BUILD INCOMPLETE";
+  private static final String BUILD_SUCCESS_COMMENT = "✓ BUILD SUCCESS";
+  private static final String BUILD_FAILURE_COMMENT = "✕ BUILD FAILURE";
+  private static final String BUILD_UNSTABLE_COMMENT = "⁉ BUILD UNSTABLE";
+  private static final String BUILD_ABORTED_COMMENT = "‼ BUILD ABORTED";
+  private static final String BUILD_NOTBUILT_COMMENT = "✕ BUILD INCOMPLETE";
 
-  public static final String ADDITIONAL_PARAMETER_REGEX = "^p:(([A-Za-z_0-9])+)=(.*)";
-  public static final Pattern ADDITIONAL_PARAMETER_REGEX_PATTERN =
+  private static final String ADDITIONAL_PARAMETER_REGEX = "^p:(([A-Za-z_0-9])+)=(.*)";
+  private static final Pattern ADDITIONAL_PARAMETER_REGEX_PATTERN =
       Pattern.compile(ADDITIONAL_PARAMETER_REGEX);
 
   private AbstractProject<?, ?> job;
