@@ -8,9 +8,14 @@ import static org.mockito.Mockito.when;
 
 import hudson.EnvVars;
 import hudson.model.Build;
+import hudson.model.FreeStyleProject;
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import hudson.triggers.Trigger;
+import hudson.triggers.TriggerDescriptor;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -118,6 +123,40 @@ public class StashBuildEnvironmentContributorTest {
     Job<?, ?> job = mock(Job.class);
 
     contributor.buildEnvironmentFor(job, envVars, listener);
+    assertThat(envVars, is(anEmptyMap()));
+  }
+
+  @Test
+  public void populates_variables_for_FreeStyleProject() throws Exception {
+    FreeStyleProject job = mock(FreeStyleProject.class);
+    Map<TriggerDescriptor, Trigger<?>> triggerMap = new HashMap<TriggerDescriptor, Trigger<?>>();
+    StashBuildTrigger trigger = mock(StashBuildTrigger.class);
+    TriggerDescriptor triggerDescriptor = StashBuildTrigger.descriptor;
+    triggerMap.put(triggerDescriptor, trigger);
+
+    when(job.getTriggers()).thenReturn(triggerMap);
+    when(trigger.getProjectCode()).thenReturn("PROJ");
+    when(trigger.getRepositoryName()).thenReturn("Repo");
+
+    contributor.buildEnvironmentFor(job, envVars, listener);
+
+    assertThat(envVars.size(), is(2));
+    assertThat(envVars, hasEntry("destinationRepositoryName", "Repo"));
+    assertThat(envVars, hasEntry("destinationRepositoryOwner", "PROJ"));
+  }
+
+  @Test
+  public void no_variables_for_FreeStyleProject_without_StashBuildTrigger() throws Exception {
+    FreeStyleProject job = mock(FreeStyleProject.class);
+    Map<TriggerDescriptor, Trigger<?>> triggerMap = new HashMap<TriggerDescriptor, Trigger<?>>();
+    Trigger<?> trigger = mock(Trigger.class);
+    TriggerDescriptor triggerDescriptor = StashBuildTrigger.descriptor;
+    triggerMap.put(triggerDescriptor, trigger);
+
+    when(job.getTriggers()).thenReturn(triggerMap);
+
+    contributor.buildEnvironmentFor(job, envVars, listener);
+
     assertThat(envVars, is(anEmptyMap()));
   }
 }

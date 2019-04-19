@@ -31,6 +31,11 @@ The plugin provides following environment variables to the build:
 
 If the project has a parameter with the name of one of those environment variables, the value of the parameter is replaced with the value of that environment variable.
 
+Of those variables, `${destinationRepositoryOwner}` and `${destinationRepositoryName}` are available in all configuration fields. For instance, they can be used in the repository browser URL:
+`http://stash.example.com/projects/${destinationRepositoryOwner}/repos/${destinationRepositoryName}/`
+
+Other variables are only available in the fields evaluated in context of a specific build, e.g. in the git repository URL or in the shell commands to be run.
+
 ## Creating a Job
 
 **Source Code Management**

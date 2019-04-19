@@ -4,12 +4,14 @@ import hudson.EnvVars;
 import hudson.Extension;
 import hudson.model.AbstractBuild;
 import hudson.model.EnvironmentContributor;
+import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nonnull;
+import jenkins.model.ParameterizedJobMixIn;
 
 @Extension
 public class StashBuildEnvironmentContributor extends EnvironmentContributor {
@@ -31,6 +33,20 @@ public class StashBuildEnvironmentContributor extends EnvironmentContributor {
     }
 
     super.buildEnvironmentFor(r, envs, listener);
+  }
+
+  @Override
+  public void buildEnvironmentFor(
+      @Nonnull Job job, @Nonnull EnvVars envs, @Nonnull TaskListener listener)
+      throws IOException, InterruptedException {
+
+    StashBuildTrigger trigger = ParameterizedJobMixIn.getTrigger(job, StashBuildTrigger.class);
+    if (trigger != null) {
+      putEnvVar(envs, "destinationRepositoryOwner", trigger.getProjectCode());
+      putEnvVar(envs, "destinationRepositoryName", trigger.getRepositoryName());
+    }
+
+    super.buildEnvironmentFor(job, envs, listener);
   }
 
   private static void putEnvVar(EnvVars envs, String key, String value) {
