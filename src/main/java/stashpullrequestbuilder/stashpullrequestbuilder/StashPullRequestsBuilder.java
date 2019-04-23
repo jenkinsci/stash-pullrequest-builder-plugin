@@ -22,7 +22,7 @@ public class StashPullRequestsBuilder {
       @Nonnull AbstractProject<?, ?> project, @Nonnull StashBuildTrigger trigger) {
     this.project = project;
     this.trigger = trigger;
-    this.repository = new StashRepository(this);
+    this.repository = new StashRepository(project, trigger);
     this.builds = new StashBuilds(trigger, repository);
   }
 
