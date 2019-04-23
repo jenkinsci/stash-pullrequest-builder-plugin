@@ -2,6 +2,7 @@ package stashpullrequestbuilder.stashpullrequestbuilder;
 
 import static java.lang.String.format;
 
+import hudson.model.AbstractProject;
 import hudson.model.Result;
 import java.lang.invoke.MethodHandles;
 import java.util.AbstractMap;
@@ -14,6 +15,7 @@ import java.util.TreeMap;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestComment;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestMergeableResponse;
@@ -48,16 +50,16 @@ public class StashRepository {
   public static final Pattern ADDITIONAL_PARAMETER_REGEX_PATTERN =
       Pattern.compile(ADDITIONAL_PARAMETER_REGEX);
 
-  private StashPullRequestsBuilder builder;
+  private AbstractProject<?, ?> job;
   private StashBuildTrigger trigger;
   private StashApiClient client;
 
-  public StashRepository(StashPullRequestsBuilder builder) {
-    this.builder = builder;
+  public StashRepository(@Nonnull AbstractProject<?, ?> job, @Nonnull StashBuildTrigger trigger) {
+    this.job = job;
+    this.trigger = trigger;
   }
 
   public void init() {
-    trigger = this.builder.getTrigger();
     client =
         new StashApiClient(
             trigger.getStashHost(),
@@ -69,7 +71,7 @@ public class StashRepository {
   }
 
   public Collection<StashPullRequestResponseValue> getTargetPullRequests() {
-    logger.info(format("Fetch PullRequests (%s).", builder.getProject().getName()));
+    logger.info(format("Fetch PullRequests (%s).", job.getName()));
     List<StashPullRequestResponseValue> pullRequests = client.getPullRequests();
     List<StashPullRequestResponseValue> targetPullRequests =
         new ArrayList<StashPullRequestResponseValue>();
@@ -85,11 +87,7 @@ public class StashRepository {
     String sourceCommit = pullRequest.getFromRef().getLatestCommit();
     String destinationCommit = pullRequest.getToRef().getLatestCommit();
     String comment =
-        format(
-            BUILD_START_MARKER,
-            builder.getProject().getDisplayName(),
-            sourceCommit,
-            destinationCommit);
+        format(BUILD_START_MARKER, job.getDisplayName(), sourceCommit, destinationCommit);
     StashPullRequestComment commentResponse =
         this.client.postPullRequestComment(pullRequest.getId(), comment);
     return commentResponse.getCommentId().toString();
@@ -174,7 +172,7 @@ public class StashRepository {
               commentId,
               pullRequest.getVersion(),
               additionalParameters);
-      this.builder.getTrigger().startJob(cause);
+      trigger.startJob(cause);
     }
   }
 
@@ -212,7 +210,7 @@ public class StashRepository {
     String comment =
         format(
             BUILD_FINISH_SENTENCE,
-            builder.getProject().getDisplayName(),
+            job.getDisplayName(),
             sourceCommit,
             destinationCommit,
             message,
@@ -287,8 +285,7 @@ public class StashRepository {
           continue;
         }
 
-        String project_build_finished =
-            format(BUILD_FINISH_REGEX, builder.getProject().getDisplayName());
+        String project_build_finished = format(BUILD_FINISH_REGEX, job.getDisplayName());
         Matcher finishMatcher =
             Pattern.compile(project_build_finished, Pattern.CASE_INSENSITIVE).matcher(content);
 
@@ -350,7 +347,7 @@ public class StashRepository {
           }
 
           // These will match any start or finish message -- need to check commits
-          String escapedBuildName = Pattern.quote(builder.getProject().getDisplayName());
+          String escapedBuildName = Pattern.quote(job.getDisplayName());
           String project_build_start = String.format(BUILD_START_REGEX, escapedBuildName);
           String project_build_finished = String.format(BUILD_FINISH_REGEX, escapedBuildName);
           Matcher startMatcher =
