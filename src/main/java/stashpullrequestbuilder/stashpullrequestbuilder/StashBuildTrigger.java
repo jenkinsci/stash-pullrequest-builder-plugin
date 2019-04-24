@@ -11,6 +11,7 @@ import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import hudson.Extension;
 import hudson.model.AbstractProject;
 import hudson.model.Item;
+import hudson.model.Job;
 import hudson.model.Queue;
 import hudson.model.queue.Tasks;
 import hudson.security.ACL;
@@ -21,6 +22,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jenkins.model.ParameterizedJobMixIn.ParameterizedJob;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -29,7 +31,7 @@ import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 /** Created by Nathan McCarthy */
-public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
+public class StashBuildTrigger extends Trigger<Job<?, ?>> {
   private static final Logger logger =
       Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
   private final String projectPath;
@@ -120,11 +122,14 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
   }
 
   private StandardUsernamePasswordCredentials getCredentials() {
+    // Cast is safe due to isApplicable() check
+    ParameterizedJob parameterizedJob = (ParameterizedJob) job;
+
     return CredentialsMatchers.firstOrNull(
         CredentialsProvider.lookupCredentials(
             StandardUsernamePasswordCredentials.class,
             this.job,
-            Tasks.getDefaultAuthenticationOf(this.job),
+            Tasks.getDefaultAuthenticationOf(parameterizedJob),
             URIRequirementBuilder.fromUri(stashHost).build()),
         CredentialsMatchers.allOf(CredentialsMatchers.withId(credentialsId)));
   }
@@ -178,11 +183,11 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
   }
 
   @Override
-  public void start(AbstractProject<?, ?> project, boolean newInstance) {
-    super.start(project, newInstance);
+  public void start(Job<?, ?> job, boolean newInstance) {
+    super.start(job, newInstance);
     try {
-      Objects.requireNonNull(project, "project is null");
-      this.stashPullRequestsBuilder = new StashPullRequestsBuilder(project, this);
+      Objects.requireNonNull(job, "job is null");
+      this.stashPullRequestsBuilder = new StashPullRequestsBuilder(job, this);
     } catch (NullPointerException e) {
       logger.log(Level.SEVERE, "Can't start trigger", e);
       return;

@@ -2,7 +2,7 @@ package stashpullrequestbuilder.stashpullrequestbuilder;
 
 import static java.lang.String.format;
 
-import hudson.model.AbstractProject;
+import hudson.model.Job;
 import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 import java.util.logging.Logger;
@@ -13,27 +13,22 @@ import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestRes
 public class StashPullRequestsBuilder {
   private static final Logger logger =
       Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
-  private AbstractProject<?, ?> project;
+  private Job<?, ?> job;
   private StashBuildTrigger trigger;
   private StashRepository repository;
 
-  public StashPullRequestsBuilder(
-      @Nonnull AbstractProject<?, ?> project, @Nonnull StashBuildTrigger trigger) {
-    this.project = project;
+  public StashPullRequestsBuilder(@Nonnull Job<?, ?> job, @Nonnull StashBuildTrigger trigger) {
+    this.job = job;
     this.trigger = trigger;
-    this.repository = new StashRepository(project, trigger);
+    this.repository = new StashRepository(job, trigger);
   }
 
   public void run() {
-    logger.info(format("Build Start (%s).", project.getName()));
+    logger.info(format("Build Start (%s).", job.getName()));
     this.repository.init();
     Collection<StashPullRequestResponseValue> targetPullRequests =
         this.repository.getTargetPullRequests();
     this.repository.addFutureBuildTasks(targetPullRequests);
-  }
-
-  public AbstractProject<?, ?> getProject() {
-    return this.project;
   }
 
   public StashBuildTrigger getTrigger() {

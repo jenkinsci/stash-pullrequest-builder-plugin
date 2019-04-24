@@ -4,6 +4,7 @@ import hudson.Extension;
 import hudson.Util;
 import hudson.model.AbstractBuild;
 import hudson.model.Result;
+import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.model.listeners.RunListener;
 import java.io.IOException;
@@ -16,57 +17,60 @@ import jenkins.model.ParameterizedJobMixIn;
 
 /** Created by Nathan McCarthy */
 @Extension
-public class StashBuildListener extends RunListener<AbstractBuild<?, ?>> {
+public class StashBuildListener extends RunListener<Run<?, ?>> {
   private static final Logger logger =
       Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
 
   @Override
-  public void onStarted(AbstractBuild<?, ?> abstractBuild, TaskListener listener) {
+  public void onStarted(Run<?, ?> run, TaskListener listener) {
     logger.info("BuildListener onStarted called.");
 
-    StashCause cause = abstractBuild.getCause(StashCause.class);
+    StashCause cause = run.getCause(StashCause.class);
     if (cause == null) {
       return;
     }
 
     try {
-      abstractBuild.setDescription(cause.getShortDescription());
+      run.setDescription(cause.getShortDescription());
     } catch (IOException e) {
       logger.log(Level.SEVERE, "Can't update build description", e);
     }
   }
 
   @Override
-  public void onCompleted(AbstractBuild<?, ?> abstractBuild, @Nonnull TaskListener listener) {
-    StashCause cause = abstractBuild.getCause(StashCause.class);
+  public void onCompleted(Run<?, ?> run, @Nonnull TaskListener listener) {
+    StashCause cause = run.getCause(StashCause.class);
     if (cause == null) {
       return;
     }
 
     StashBuildTrigger trigger =
-        ParameterizedJobMixIn.getTrigger(abstractBuild.getParent(), StashBuildTrigger.class);
+        ParameterizedJobMixIn.getTrigger(run.getParent(), StashBuildTrigger.class);
     if (trigger == null) {
       return;
     }
 
     StashRepository repository = trigger.getBuilder().getRepository();
-    Result result = abstractBuild.getResult();
+    Result result = run.getResult();
     // Note: current code should no longer use "new JenkinsLocationConfiguration()"
     // as only one instance per runtime is really supported by the current core.
     JenkinsLocationConfiguration globalConfig = JenkinsLocationConfiguration.get();
     String rootUrl = globalConfig == null ? null : globalConfig.getUrl();
     String buildUrl = "";
     if (rootUrl == null) {
-      buildUrl = " PLEASE SET JENKINS ROOT URL FROM GLOBAL CONFIGURATION " + abstractBuild.getUrl();
+      buildUrl = " PLEASE SET JENKINS ROOT URL FROM GLOBAL CONFIGURATION " + run.getUrl();
     } else {
-      buildUrl = rootUrl + abstractBuild.getUrl();
+      buildUrl = rootUrl + run.getUrl();
     }
     repository.deletePullRequestComment(cause.getPullRequestId(), cause.getBuildStartCommentId());
 
     String additionalComment = "";
+    StashPostBuildComment comments = null;
 
-    StashPostBuildComment comments =
-        abstractBuild.getProject().getPublishersList().get(StashPostBuildComment.class);
+    if (run instanceof AbstractBuild) {
+      AbstractBuild<?, ?> build = (AbstractBuild<?, ?>) run;
+      comments = build.getProject().getPublishersList().get(StashPostBuildComment.class);
+    }
 
     if (comments != null) {
       String buildComment =
@@ -77,8 +81,7 @@ public class StashBuildListener extends RunListener<AbstractBuild<?, ?>> {
       if (buildComment != null && !buildComment.isEmpty()) {
         String expandedComment;
         try {
-          expandedComment =
-              Util.fixEmptyAndTrim(abstractBuild.getEnvironment(listener).expand(buildComment));
+          expandedComment = Util.fixEmptyAndTrim(run.getEnvironment(listener).expand(buildComment));
         } catch (IOException | InterruptedException e) {
           expandedComment = "Exception while expanding '" + buildComment + "': " + e;
         }
@@ -86,19 +89,19 @@ public class StashBuildListener extends RunListener<AbstractBuild<?, ?>> {
         additionalComment = "\n\n" + expandedComment;
       }
     }
-    String duration = abstractBuild.getDurationString();
+    String duration = run.getDurationString();
     repository.postFinishedComment(
         cause.getPullRequestId(),
         cause.getSourceCommitHash(),
         cause.getDestinationCommitHash(),
         result,
         buildUrl,
-        abstractBuild.getNumber(),
+        run.getNumber(),
         additionalComment,
         duration);
 
     // Merge PR
-    if (trigger.getMergeOnSuccess() && abstractBuild.getResult() == Result.SUCCESS) {
+    if (trigger.getMergeOnSuccess() && run.getResult() == Result.SUCCESS) {
       boolean mergeStat =
           repository.mergePullRequest(cause.getPullRequestId(), cause.getPullRequestVersion());
       if (mergeStat == true) {
