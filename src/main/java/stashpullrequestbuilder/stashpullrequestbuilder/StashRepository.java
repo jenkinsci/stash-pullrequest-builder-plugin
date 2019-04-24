@@ -55,8 +55,17 @@ public class StashRepository {
   private StashApiClient client;
 
   public StashRepository(@Nonnull AbstractProject<?, ?> job, @Nonnull StashBuildTrigger trigger) {
+    this(job, trigger, null);
+  }
+
+  // For unit tests only
+  StashRepository(
+      @Nonnull AbstractProject<?, ?> job,
+      @Nonnull StashBuildTrigger trigger,
+      StashApiClient client) {
     this.job = job;
     this.trigger = trigger;
+    this.client = client;
   }
 
   public void init() {
@@ -298,104 +307,106 @@ public class StashRepository {
 
   private boolean isBuildTarget(StashPullRequestResponseValue pullRequest) {
 
+    if (!"OPEN".equals(pullRequest.getState())) {
+      return false;
+    }
+
     boolean shouldBuild = true;
 
-    if (pullRequest.getState() != null && pullRequest.getState().equals("OPEN")) {
-      if (isSkipBuild(pullRequest.getTitle())) {
-        logger.info("Skipping PR: " + pullRequest.getId() + " as title contained skip phrase");
-        return false;
-      }
+    if (isSkipBuild(pullRequest.getTitle())) {
+      logger.info("Skipping PR: " + pullRequest.getId() + " as title contained skip phrase");
+      return false;
+    }
 
-      if (!isForTargetBranch(pullRequest)) {
-        logger.info(
-            "Skipping PR: "
-                + pullRequest.getId()
-                + " as targeting branch: "
-                + pullRequest.getToRef().getBranch().getName());
-        return false;
-      }
+    if (!isForTargetBranch(pullRequest)) {
+      logger.info(
+          "Skipping PR: "
+              + pullRequest.getId()
+              + " as targeting branch: "
+              + pullRequest.getToRef().getBranch().getName());
+      return false;
+    }
 
-      if (!isPullRequestMergeable(pullRequest)) {
-        logger.info("Skipping PR: " + pullRequest.getId() + " as cannot be merged");
-        return false;
-      }
+    if (!isPullRequestMergeable(pullRequest)) {
+      logger.info("Skipping PR: " + pullRequest.getId() + " as cannot be merged");
+      return false;
+    }
 
-      boolean isOnlyBuildOnComment = trigger.isOnlyBuildOnComment();
+    boolean isOnlyBuildOnComment = trigger.isOnlyBuildOnComment();
 
-      if (isOnlyBuildOnComment) {
-        shouldBuild = false;
-      }
+    if (isOnlyBuildOnComment) {
+      shouldBuild = false;
+    }
 
-      String sourceCommit = pullRequest.getFromRef().getLatestCommit();
+    String sourceCommit = pullRequest.getFromRef().getLatestCommit();
 
-      StashPullRequestResponseValueRepository destination = pullRequest.getToRef();
-      String owner = destination.getRepository().getProjectName();
-      String repositoryName = destination.getRepository().getRepositoryName();
-      String destinationCommit = destination.getLatestCommit();
+    StashPullRequestResponseValueRepository destination = pullRequest.getToRef();
+    String owner = destination.getRepository().getProjectName();
+    String repositoryName = destination.getRepository().getRepositoryName();
+    String destinationCommit = destination.getLatestCommit();
 
-      String id = pullRequest.getId();
-      List<StashPullRequestComment> comments =
-          client.getPullRequestComments(owner, repositoryName, id);
+    String id = pullRequest.getId();
+    List<StashPullRequestComment> comments =
+        client.getPullRequestComments(owner, repositoryName, id);
 
-      if (comments != null) {
-        Collections.sort(comments);
-        Collections.reverse(comments);
-        for (StashPullRequestComment comment : comments) {
-          String content = comment.getText();
-          if (content == null || content.isEmpty()) {
-            continue;
+    if (comments != null) {
+      Collections.sort(comments);
+      Collections.reverse(comments);
+      for (StashPullRequestComment comment : comments) {
+        String content = comment.getText();
+        if (content == null || content.isEmpty()) {
+          continue;
+        }
+
+        // These will match any start or finish message -- need to check commits
+        String escapedBuildName = Pattern.quote(job.getDisplayName());
+        String project_build_start = String.format(BUILD_START_REGEX, escapedBuildName);
+        String project_build_finished = String.format(BUILD_FINISH_REGEX, escapedBuildName);
+        Matcher startMatcher =
+            Pattern.compile(project_build_start, Pattern.CASE_INSENSITIVE).matcher(content);
+        Matcher finishMatcher =
+            Pattern.compile(project_build_finished, Pattern.CASE_INSENSITIVE).matcher(content);
+
+        if (startMatcher.find() || finishMatcher.find()) {
+          // in build only on comment, we should stop parsing comments as soon as a PR builder
+          // comment is found.
+          if (isOnlyBuildOnComment) {
+            assert !shouldBuild;
+            break;
           }
 
-          // These will match any start or finish message -- need to check commits
-          String escapedBuildName = Pattern.quote(job.getDisplayName());
-          String project_build_start = String.format(BUILD_START_REGEX, escapedBuildName);
-          String project_build_finished = String.format(BUILD_FINISH_REGEX, escapedBuildName);
-          Matcher startMatcher =
-              Pattern.compile(project_build_start, Pattern.CASE_INSENSITIVE).matcher(content);
-          Matcher finishMatcher =
-              Pattern.compile(project_build_finished, Pattern.CASE_INSENSITIVE).matcher(content);
+          String sourceCommitMatch;
+          String destinationCommitMatch;
 
-          if (startMatcher.find() || finishMatcher.find()) {
-            // in build only on comment, we should stop parsing comments as soon as a PR builder
-            // comment is found.
-            if (isOnlyBuildOnComment) {
-              assert !shouldBuild;
-              break;
-            }
-
-            String sourceCommitMatch;
-            String destinationCommitMatch;
-
-            if (startMatcher.find(0)) {
-              sourceCommitMatch = startMatcher.group(1);
-              destinationCommitMatch = startMatcher.group(2);
-            } else {
-              sourceCommitMatch = finishMatcher.group(1);
-              destinationCommitMatch = finishMatcher.group(2);
-            }
-
-            // first check source commit -- if it doesn't match, just move on. If it does,
-            // investigate further.
-            if (sourceCommitMatch.equalsIgnoreCase(sourceCommit)) {
-              // if we're checking destination commits, and if this doesn't match, then move on.
-              if (this.trigger.getCheckDestinationCommit()
-                  && (!destinationCommitMatch.equalsIgnoreCase(destinationCommit))) {
-                continue;
-              }
-
-              shouldBuild = false;
-              break;
-            }
+          if (startMatcher.find(0)) {
+            sourceCommitMatch = startMatcher.group(1);
+            destinationCommitMatch = startMatcher.group(2);
+          } else {
+            sourceCommitMatch = finishMatcher.group(1);
+            destinationCommitMatch = finishMatcher.group(2);
           }
 
-          if (isSkipBuild(content)) {
+          // first check source commit -- if it doesn't match, just move on. If it does,
+          // investigate further.
+          if (sourceCommitMatch.equalsIgnoreCase(sourceCommit)) {
+            // if we're checking destination commits, and if this doesn't match, then move on.
+            if (this.trigger.getCheckDestinationCommit()
+                && (!destinationCommitMatch.equalsIgnoreCase(destinationCommit))) {
+              continue;
+            }
+
             shouldBuild = false;
             break;
           }
-          if (isPhrasesContain(content, this.trigger.getCiBuildPhrases())) {
-            shouldBuild = true;
-            break;
-          }
+        }
+
+        if (isSkipBuild(content)) {
+          shouldBuild = false;
+          break;
+        }
+        if (isPhrasesContain(content, this.trigger.getCiBuildPhrases())) {
+          shouldBuild = true;
+          break;
         }
       }
     }
