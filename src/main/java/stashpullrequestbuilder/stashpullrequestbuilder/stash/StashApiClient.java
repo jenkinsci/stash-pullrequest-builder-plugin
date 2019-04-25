@@ -4,7 +4,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.lang.invoke.MethodHandles;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -157,8 +156,6 @@ public class StashApiClient {
       String response = postRequest(path, comment);
       return parseSingleCommentJson(response);
 
-    } catch (UnsupportedEncodingException e) {
-      e.printStackTrace();
     } catch (IOException e) {
       logger.log(Level.SEVERE, "Failed to post Stash PR comment " + path + " " + e);
     }
@@ -172,8 +169,6 @@ public class StashApiClient {
       String response = getRequest(path);
       return parsePullRequestMergeStatus(response);
 
-    } catch (UnsupportedEncodingException e) {
-      e.printStackTrace();
     } catch (IOException e) {
       logger.log(Level.WARNING, "Failed to get Stash PR Merge Status " + path + " " + e);
     }
@@ -182,16 +177,8 @@ public class StashApiClient {
 
   public boolean mergePullRequest(String pullRequestId, String version) {
     String path = pullRequestPath(pullRequestId) + "/merge?version=" + version;
-    try {
-      String response = postRequest(path, null);
-      return !response.equals(Integer.toString(HttpStatus.SC_CONFLICT));
-
-    } catch (UnsupportedEncodingException e) {
-      e.printStackTrace();
-    } catch (IOException e) {
-      logger.log(Level.SEVERE, "Failed to merge Stash PR " + path + " " + e);
-    }
-    return false;
+    String response = postRequest(path, null);
+    return !response.equals(Integer.toString(HttpStatus.SC_CONFLICT));
   }
 
   private HttpClient getHttpClient() {
@@ -349,7 +336,7 @@ public class StashApiClient {
     logger.log(Level.FINE, "Delete comment {" + path + "} returned result code; " + response);
   }
 
-  private String postRequest(String path, String comment) throws UnsupportedEncodingException {
+  private String postRequest(String path, String comment) {
     logger.log(Level.FINEST, "PR-POST-REQUEST:" + path + " with: " + comment);
     HttpClient client = getHttpClient();
     client.getState().setCredentials(AuthScope.ANY, credentials);
