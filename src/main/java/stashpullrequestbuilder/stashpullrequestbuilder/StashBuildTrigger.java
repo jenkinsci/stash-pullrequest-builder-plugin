@@ -191,7 +191,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     return mergeOnSuccess;
   }
 
-  public boolean isCancelOutdatedJobsEnabled() {
+  public boolean getCancelOutdatedJobsEnabled() {
     return cancelOutdatedJobsEnabled;
   }
 
@@ -226,7 +226,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
       }
     }
 
-    if (isCancelOutdatedJobsEnabled()) {
+    if (getCancelOutdatedJobsEnabled()) {
       cancelPreviousJobsInQueueThatMatch(cause);
       abortRunningJobsThatMatch(cause);
     }
