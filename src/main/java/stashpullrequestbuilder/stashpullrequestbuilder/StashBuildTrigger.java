@@ -175,7 +175,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     return checkDestinationCommit;
   }
 
-  public boolean isIgnoreSsl() {
+  public boolean getIgnoreSsl() {
     return ignoreSsl;
   }
 

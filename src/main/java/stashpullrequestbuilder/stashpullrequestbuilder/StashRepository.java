@@ -69,7 +69,7 @@ public class StashRepository {
             trigger.getPassword(),
             trigger.getProjectCode(),
             trigger.getRepositoryName(),
-            trigger.isIgnoreSsl());
+            trigger.getIgnoreSsl());
   }
 
   public Collection<StashPullRequestResponseValue> getTargetPullRequests() {
