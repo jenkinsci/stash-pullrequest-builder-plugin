@@ -353,7 +353,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     public ListBoxModel doFillCredentialsIdItems(
-        @AncestorInPath Item context, @QueryParameter String source) {
+        @AncestorInPath Item context, @QueryParameter String stashHost) {
       if (context == null || !context.hasPermission(Item.CONFIGURE)) {
         return new ListBoxModel();
       }
@@ -365,7 +365,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
                   : ACL.SYSTEM,
               context,
               StandardUsernamePasswordCredentials.class,
-              URIRequirementBuilder.fromUri(source).build());
+              URIRequirementBuilder.fromUri(stashHost).build());
     }
   }
 }
