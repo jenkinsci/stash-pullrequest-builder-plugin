@@ -115,7 +115,7 @@ public class StashRepository {
 
   public static Map<String, String> getParametersFromContent(String content) {
     Map<String, String> result = new TreeMap<String, String>();
-    String lines[] = content.split("\\r?\\n|\\r");
+    String[] lines = content.split("\\r?\\n|\\r");
     for (String line : lines) {
       AbstractMap.SimpleEntry<String, String> parameter = getParameter(line);
       if (parameter != null) {
