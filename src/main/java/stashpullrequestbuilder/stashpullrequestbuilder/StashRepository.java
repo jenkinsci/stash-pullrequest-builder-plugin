@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
+import org.apache.commons.lang.StringUtils;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestComment;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestMergeableResponse;
@@ -415,7 +416,7 @@ public class StashRepository {
 
   private boolean isForTargetBranch(StashPullRequestResponseValue pullRequest) {
     String targetBranchesToBuild = this.trigger.getTargetBranchesToBuild();
-    if (targetBranchesToBuild != null && !"".equals(targetBranchesToBuild)) {
+    if (StringUtils.isNotEmpty(targetBranchesToBuild)) {
       String[] branches = targetBranchesToBuild.split(",");
       for (String branch : branches) {
         if (pullRequest.getToRef().getBranch().getName().matches(branch.trim())) {
@@ -429,7 +430,7 @@ public class StashRepository {
 
   private boolean isSkipBuild(String pullRequestContentString) {
     String skipPhrases = this.trigger.getCiSkipPhrases();
-    if (skipPhrases != null && !"".equals(skipPhrases)) {
+    if (StringUtils.isNotEmpty(skipPhrases)) {
       String[] phrases = skipPhrases.split(",");
       for (String phrase : phrases) {
         if (isPhrasesContain(pullRequestContentString, phrase)) {
