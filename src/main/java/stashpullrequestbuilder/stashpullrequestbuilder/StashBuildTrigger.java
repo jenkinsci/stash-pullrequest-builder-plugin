@@ -11,8 +11,8 @@ import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.model.AbstractProject;
-import hudson.model.Build;
 import hudson.model.Cause;
+import hudson.model.Executor;
 import hudson.model.Item;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
@@ -20,6 +20,7 @@ import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Queue;
 import hudson.model.Result;
+import hudson.model.Run;
 import hudson.model.StringParameterValue;
 import hudson.model.queue.QueueTaskFuture;
 import hudson.model.queue.Tasks;
@@ -47,7 +48,7 @@ import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 /** Created by Nathan McCarthy */
-@SuppressFBWarnings({"WMI_WRONG_MAP_ITERATOR", "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"})
+@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
   private static final Logger logger =
       Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
@@ -195,6 +196,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
   @Override
   public void start(AbstractProject<?, ?> project, boolean newInstance) {
+    super.start(project, newInstance);
     try {
       Objects.requireNonNull(project, "project is null");
       this.stashPullRequestsBuilder = new StashPullRequestsBuilder(project, this);
@@ -202,12 +204,10 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
       logger.log(Level.SEVERE, "Can't start trigger", e);
       return;
     }
-    super.start(project, newInstance);
   }
 
-  public static StashBuildTrigger getTrigger(AbstractProject project) {
-    Trigger trigger = project.getTrigger(StashBuildTrigger.class);
-    return (StashBuildTrigger) trigger;
+  public static StashBuildTrigger getTrigger(AbstractProject<?, ?> project) {
+    return project.getTrigger(StashBuildTrigger.class);
   }
 
   public StashPullRequestsBuilder getBuilder() {
@@ -219,8 +219,8 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     Map<String, String> additionalParameters = cause.getAdditionalParameters();
     if (additionalParameters != null) {
-      for (String parameter : additionalParameters.keySet()) {
-        values.add(new StringParameterValue(parameter, additionalParameters.get(parameter)));
+      for (Map.Entry<String, String> parameter : additionalParameters.entrySet()) {
+        values.add(new StringParameterValue(parameter.getKey(), parameter.getValue()));
       }
     }
 
@@ -245,12 +245,12 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
   private void abortRunningJobsThatMatch(@Nonnull StashCause stashCause) {
     logger.fine("Looking for running jobs that match PR ID: " + stashCause.getPullRequestId());
-    for (Object o : job.getBuilds()) {
-      if (o instanceof Build) {
-        Build build = (Build) o;
-        if (build.isBuilding() && hasCauseFromTheSamePullRequest(build.getCauses(), stashCause)) {
-          logger.info("Aborting build: " + build + " since PR is outdated");
-          build.getExecutor().interrupt(Result.ABORTED);
+    for (Run<?, ?> run : job.getBuilds()) {
+      if (run.isBuilding() && hasCauseFromTheSamePullRequest(run.getCauses(), stashCause)) {
+        logger.info("Aborting build: " + run.getId() + " since PR is outdated");
+        Executor executor = run.getExecutor();
+        if (executor != null) {
+          executor.interrupt(Result.ABORTED);
         }
       }
     }
@@ -293,14 +293,13 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
   @Override
   public void run() {
-    if (stashPullRequestsBuilder == null) {
+    if (job == null) {
       logger.info("Not ready to run.");
       return;
     }
 
-    AbstractProject project = stashPullRequestsBuilder.getProject();
-    if (project.isDisabled()) {
-      logger.fine(format("Project disabled, skipping build (%s).", project.getName()));
+    if (!job.isBuildable()) {
+      logger.fine(format("Job is not buildable, skipping build (%s).", job.getName()));
       return;
     }
 
@@ -339,7 +338,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     @Override
     public boolean isApplicable(Item item) {
-      return true;
+      return item instanceof AbstractProject;
     }
 
     @Override
@@ -354,7 +353,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     public ListBoxModel doFillCredentialsIdItems(
-        @AncestorInPath Item context, @QueryParameter String source) {
+        @AncestorInPath Item context, @QueryParameter String stashHost) {
       if (context == null || !context.hasPermission(Item.CONFIGURE)) {
         return new ListBoxModel();
       }
@@ -366,7 +365,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
                   : ACL.SYSTEM,
               context,
               StandardUsernamePasswordCredentials.class,
-              URIRequirementBuilder.fromUri(source).build());
+              URIRequirementBuilder.fromUri(stashHost).build());
     }
   }
 }

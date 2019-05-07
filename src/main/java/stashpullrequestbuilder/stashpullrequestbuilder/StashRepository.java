@@ -2,7 +2,7 @@ package stashpullrequestbuilder.stashpullrequestbuilder;
 
 import static java.lang.String.format;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.model.AbstractProject;
 import hudson.model.Result;
 import java.lang.invoke.MethodHandles;
 import java.util.AbstractMap;
@@ -15,14 +15,14 @@ import java.util.TreeMap;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestComment;
-import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestMergableResponse;
+import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestMergeableResponse;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestResponseValue;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestResponseValueRepository;
 
 /** Created by Nathan McCarthy */
-@SuppressFBWarnings("WMI_WRONG_MAP_ITERATOR")
 public class StashRepository {
   private static final Logger logger =
       Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
@@ -50,18 +50,25 @@ public class StashRepository {
   public static final Pattern ADDITIONAL_PARAMETER_REGEX_PATTERN =
       Pattern.compile(ADDITIONAL_PARAMETER_REGEX);
 
-  private String projectPath;
-  private StashPullRequestsBuilder builder;
+  private AbstractProject<?, ?> job;
   private StashBuildTrigger trigger;
   private StashApiClient client;
 
-  public StashRepository(String projectPath, StashPullRequestsBuilder builder) {
-    this.projectPath = projectPath;
-    this.builder = builder;
+  public StashRepository(@Nonnull AbstractProject<?, ?> job, @Nonnull StashBuildTrigger trigger) {
+    this(job, trigger, null);
+  }
+
+  // For unit tests only
+  StashRepository(
+      @Nonnull AbstractProject<?, ?> job,
+      @Nonnull StashBuildTrigger trigger,
+      StashApiClient client) {
+    this.job = job;
+    this.trigger = trigger;
+    this.client = client;
   }
 
   public void init() {
-    trigger = this.builder.getTrigger();
     client =
         new StashApiClient(
             trigger.getStashHost(),
@@ -73,7 +80,7 @@ public class StashRepository {
   }
 
   public Collection<StashPullRequestResponseValue> getTargetPullRequests() {
-    logger.info(format("Fetch PullRequests (%s).", builder.getProject().getName()));
+    logger.info(format("Fetch PullRequests (%s).", job.getName()));
     List<StashPullRequestResponseValue> pullRequests = client.getPullRequests();
     List<StashPullRequestResponseValue> targetPullRequests =
         new ArrayList<StashPullRequestResponseValue>();
@@ -89,11 +96,7 @@ public class StashRepository {
     String sourceCommit = pullRequest.getFromRef().getLatestCommit();
     String destinationCommit = pullRequest.getToRef().getLatestCommit();
     String comment =
-        format(
-            BUILD_START_MARKER,
-            builder.getProject().getDisplayName(),
-            sourceCommit,
-            destinationCommit);
+        format(BUILD_START_MARKER, job.getDisplayName(), sourceCommit, destinationCommit);
     StashPullRequestComment commentResponse =
         this.client.postPullRequestComment(pullRequest.getId(), comment);
     return commentResponse.getCommentId().toString();
@@ -146,8 +149,8 @@ public class StashRepository {
         }
 
         Map<String, String> parameters = getParametersFromContent(content);
-        for (String key : parameters.keySet()) {
-          result.put(key, parameters.get(key));
+        for (Map.Entry<String, String> parameter : parameters.entrySet()) {
+          result.put(parameter.getKey(), parameter.getValue());
         }
       }
       return result;
@@ -178,7 +181,7 @@ public class StashRepository {
               commentId,
               pullRequest.getVersion(),
               additionalParameters);
-      this.builder.getTrigger().startJob(cause);
+      trigger.startJob(cause);
     }
   }
 
@@ -216,7 +219,7 @@ public class StashRepository {
     String comment =
         format(
             BUILD_FINISH_SENTENCE,
-            builder.getProject().getDisplayName(),
+            job.getDisplayName(),
             sourceCommit,
             destinationCommit,
             message,
@@ -233,7 +236,7 @@ public class StashRepository {
     return this.client.mergePullRequest(pullRequestId, version);
   }
 
-  private Boolean isPullRequestMergable(StashPullRequestResponseValue pullRequest) {
+  private boolean isPullRequestMergeable(StashPullRequestResponseValue pullRequest) {
     if (trigger.isCheckMergeable()
         || trigger.isCheckNotConflicted()
         || trigger.isCheckProbeMergeStatus()) {
@@ -242,15 +245,15 @@ public class StashRepository {
        * JSON answer, parsed into fields of the "response" object.
        * See example in StashApiClientTest.java.
        */
-      StashPullRequestMergableResponse mergable =
+      StashPullRequestMergeableResponse mergeable =
           client.getPullRequestMergeStatus(pullRequest.getId());
       boolean res = true;
       if (trigger.isCheckMergeable()) {
-        res &= mergable.getCanMerge();
+        res &= mergeable.getCanMerge();
       }
 
       if (trigger.isCheckNotConflicted()) {
-        res &= !mergable.getConflicted();
+        res &= !mergeable.getConflicted();
       }
 
       /* The trigger.isCheckProbeMergeStatus() consulted above
@@ -291,8 +294,7 @@ public class StashRepository {
           continue;
         }
 
-        String project_build_finished =
-            format(BUILD_FINISH_REGEX, builder.getProject().getDisplayName());
+        String project_build_finished = format(BUILD_FINISH_REGEX, job.getDisplayName());
         Matcher finishMatcher =
             Pattern.compile(project_build_finished, Pattern.CASE_INSENSITIVE).matcher(content);
 
@@ -305,104 +307,106 @@ public class StashRepository {
 
   private boolean isBuildTarget(StashPullRequestResponseValue pullRequest) {
 
+    if (!"OPEN".equals(pullRequest.getState())) {
+      return false;
+    }
+
     boolean shouldBuild = true;
 
-    if (pullRequest.getState() != null && pullRequest.getState().equals("OPEN")) {
-      if (isSkipBuild(pullRequest.getTitle())) {
-        logger.info("Skipping PR: " + pullRequest.getId() + " as title contained skip phrase");
-        return false;
-      }
+    if (isSkipBuild(pullRequest.getTitle())) {
+      logger.info("Skipping PR: " + pullRequest.getId() + " as title contained skip phrase");
+      return false;
+    }
 
-      if (!isForTargetBranch(pullRequest)) {
-        logger.info(
-            "Skipping PR: "
-                + pullRequest.getId()
-                + " as targeting branch: "
-                + pullRequest.getToRef().getBranch().getName());
-        return false;
-      }
+    if (!isForTargetBranch(pullRequest)) {
+      logger.info(
+          "Skipping PR: "
+              + pullRequest.getId()
+              + " as targeting branch: "
+              + pullRequest.getToRef().getBranch().getName());
+      return false;
+    }
 
-      if (!isPullRequestMergable(pullRequest)) {
-        logger.info("Skipping PR: " + pullRequest.getId() + " as cannot be merged");
-        return false;
-      }
+    if (!isPullRequestMergeable(pullRequest)) {
+      logger.info("Skipping PR: " + pullRequest.getId() + " as cannot be merged");
+      return false;
+    }
 
-      boolean isOnlyBuildOnComment = trigger.isOnlyBuildOnComment();
+    boolean isOnlyBuildOnComment = trigger.isOnlyBuildOnComment();
 
-      if (isOnlyBuildOnComment) {
-        shouldBuild = false;
-      }
+    if (isOnlyBuildOnComment) {
+      shouldBuild = false;
+    }
 
-      String sourceCommit = pullRequest.getFromRef().getLatestCommit();
+    String sourceCommit = pullRequest.getFromRef().getLatestCommit();
 
-      StashPullRequestResponseValueRepository destination = pullRequest.getToRef();
-      String owner = destination.getRepository().getProjectName();
-      String repositoryName = destination.getRepository().getRepositoryName();
-      String destinationCommit = destination.getLatestCommit();
+    StashPullRequestResponseValueRepository destination = pullRequest.getToRef();
+    String owner = destination.getRepository().getProjectName();
+    String repositoryName = destination.getRepository().getRepositoryName();
+    String destinationCommit = destination.getLatestCommit();
 
-      String id = pullRequest.getId();
-      List<StashPullRequestComment> comments =
-          client.getPullRequestComments(owner, repositoryName, id);
+    String id = pullRequest.getId();
+    List<StashPullRequestComment> comments =
+        client.getPullRequestComments(owner, repositoryName, id);
 
-      if (comments != null) {
-        Collections.sort(comments);
-        Collections.reverse(comments);
-        for (StashPullRequestComment comment : comments) {
-          String content = comment.getText();
-          if (content == null || content.isEmpty()) {
-            continue;
+    if (comments != null) {
+      Collections.sort(comments);
+      Collections.reverse(comments);
+      for (StashPullRequestComment comment : comments) {
+        String content = comment.getText();
+        if (content == null || content.isEmpty()) {
+          continue;
+        }
+
+        // These will match any start or finish message -- need to check commits
+        String escapedBuildName = Pattern.quote(job.getDisplayName());
+        String project_build_start = String.format(BUILD_START_REGEX, escapedBuildName);
+        String project_build_finished = String.format(BUILD_FINISH_REGEX, escapedBuildName);
+        Matcher startMatcher =
+            Pattern.compile(project_build_start, Pattern.CASE_INSENSITIVE).matcher(content);
+        Matcher finishMatcher =
+            Pattern.compile(project_build_finished, Pattern.CASE_INSENSITIVE).matcher(content);
+
+        if (startMatcher.find() || finishMatcher.find()) {
+          // in build only on comment, we should stop parsing comments as soon as a PR builder
+          // comment is found.
+          if (isOnlyBuildOnComment) {
+            assert !shouldBuild;
+            break;
           }
 
-          // These will match any start or finish message -- need to check commits
-          String escapedBuildName = Pattern.quote(builder.getProject().getDisplayName());
-          String project_build_start = String.format(BUILD_START_REGEX, escapedBuildName);
-          String project_build_finished = String.format(BUILD_FINISH_REGEX, escapedBuildName);
-          Matcher startMatcher =
-              Pattern.compile(project_build_start, Pattern.CASE_INSENSITIVE).matcher(content);
-          Matcher finishMatcher =
-              Pattern.compile(project_build_finished, Pattern.CASE_INSENSITIVE).matcher(content);
+          String sourceCommitMatch;
+          String destinationCommitMatch;
 
-          if (startMatcher.find() || finishMatcher.find()) {
-            // in build only on comment, we should stop parsing comments as soon as a PR builder
-            // comment is found.
-            if (isOnlyBuildOnComment) {
-              assert !shouldBuild;
-              break;
-            }
-
-            String sourceCommitMatch;
-            String destinationCommitMatch;
-
-            if (startMatcher.find(0)) {
-              sourceCommitMatch = startMatcher.group(1);
-              destinationCommitMatch = startMatcher.group(2);
-            } else {
-              sourceCommitMatch = finishMatcher.group(1);
-              destinationCommitMatch = finishMatcher.group(2);
-            }
-
-            // first check source commit -- if it doesn't match, just move on. If it does,
-            // investigate further.
-            if (sourceCommitMatch.equalsIgnoreCase(sourceCommit)) {
-              // if we're checking destination commits, and if this doesn't match, then move on.
-              if (this.trigger.getCheckDestinationCommit()
-                  && (!destinationCommitMatch.equalsIgnoreCase(destinationCommit))) {
-                continue;
-              }
-
-              shouldBuild = false;
-              break;
-            }
+          if (startMatcher.find(0)) {
+            sourceCommitMatch = startMatcher.group(1);
+            destinationCommitMatch = startMatcher.group(2);
+          } else {
+            sourceCommitMatch = finishMatcher.group(1);
+            destinationCommitMatch = finishMatcher.group(2);
           }
 
-          if (isSkipBuild(content)) {
+          // first check source commit -- if it doesn't match, just move on. If it does,
+          // investigate further.
+          if (sourceCommitMatch.equalsIgnoreCase(sourceCommit)) {
+            // if we're checking destination commits, and if this doesn't match, then move on.
+            if (this.trigger.getCheckDestinationCommit()
+                && (!destinationCommitMatch.equalsIgnoreCase(destinationCommit))) {
+              continue;
+            }
+
             shouldBuild = false;
             break;
           }
-          if (isPhrasesContain(content, this.trigger.getCiBuildPhrases())) {
-            shouldBuild = true;
-            break;
-          }
+        }
+
+        if (isSkipBuild(content)) {
+          shouldBuild = false;
+          break;
+        }
+        if (isPhrasesContain(content, this.trigger.getCiBuildPhrases())) {
+          shouldBuild = true;
+          break;
         }
       }
     }

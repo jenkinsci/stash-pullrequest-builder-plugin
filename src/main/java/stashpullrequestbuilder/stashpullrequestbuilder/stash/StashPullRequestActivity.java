@@ -21,12 +21,12 @@ public class StashPullRequestActivity implements Comparable<StashPullRequestActi
     if (this.comment == null || target.getComment() == null) {
       return -1;
     }
-    int commmentIdThis = this.comment.getCommentId();
-    int commmentIdOther = target.getComment().getCommentId();
+    int commentIdThis = this.comment.getCommentId();
+    int commentIdOther = target.getComment().getCommentId();
 
-    if (commmentIdThis > commmentIdOther) {
+    if (commentIdThis > commentIdOther) {
       return 1;
-    } else if (commmentIdThis == commmentIdOther) {
+    } else if (commentIdThis == commentIdOther) {
       return 0;
     } else {
       return -1;

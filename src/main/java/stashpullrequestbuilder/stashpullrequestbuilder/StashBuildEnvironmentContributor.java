@@ -11,16 +11,16 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 
 @Extension
-public class StashAditionalParameterEnvironmentContributor extends EnvironmentContributor {
+public class StashBuildEnvironmentContributor extends EnvironmentContributor {
   @Override
   public void buildEnvironmentFor(
       @Nonnull Run r, @Nonnull EnvVars envs, @Nonnull TaskListener listener)
       throws IOException, InterruptedException {
     if (r instanceof AbstractBuild) {
-      AbstractBuild build = (AbstractBuild) r;
-      AbstractBuild rootBuild = build.getRootBuild();
+      AbstractBuild<?, ?> build = (AbstractBuild<?, ?>) r;
+      AbstractBuild<?, ?> rootBuild = build.getRootBuild();
 
-      StashCause cause = (StashCause) rootBuild.getCause(StashCause.class);
+      StashCause cause = rootBuild.getCause(StashCause.class);
       if (cause != null) {
         putEnvVar(envs, "sourceBranch", cause.getSourceBranch());
         putEnvVar(envs, "targetBranch", cause.getTargetBranch());
