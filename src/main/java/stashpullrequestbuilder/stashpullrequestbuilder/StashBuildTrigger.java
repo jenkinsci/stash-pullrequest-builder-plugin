@@ -54,6 +54,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
   private final String projectPath;
   private final String cron;
   private final String stashHost;
+  private final JSONObject proxySettings;
   private final String credentialsId;
   private final String projectCode;
   private final String repositoryName;
@@ -81,6 +82,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
       String projectPath,
       String cron,
       String stashHost,
+      JSONObject proxySettings,
       String credentialsId,
       String projectCode,
       String repositoryName,
@@ -100,6 +102,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     this.projectPath = projectPath;
     this.cron = cron;
     this.stashHost = stashHost;
+    this.proxySettings = proxySettings;
     this.credentialsId = credentialsId;
     this.projectCode = projectCode;
     this.repositoryName = repositoryName;
@@ -123,6 +126,10 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
   public String getStashHost() {
     return stashHost;
+  }
+
+  public JSONObject getProxySettings() {
+    return proxySettings;
   }
 
   public String getProjectPath() {

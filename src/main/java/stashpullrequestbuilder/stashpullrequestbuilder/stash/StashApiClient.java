@@ -24,6 +24,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+
+import net.sf.json.JSONObject;
 import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpClient;
@@ -60,12 +62,15 @@ public class StashApiClient {
 
   private String apiBaseUrl;
 
+  private final JSONObject proxySettings;
+
   private String project;
   private String repositoryName;
   private Credentials credentials;
 
   public StashApiClient(
       String stashHost,
+      JSONObject proxySettings,
       String username,
       String password,
       String project,
@@ -75,6 +80,7 @@ public class StashApiClient {
     this.project = project;
     this.repositoryName = repositoryName;
     this.apiBaseUrl = stashHost.replaceAll("/$", "") + "/rest/api/1.0/projects/";
+    this.proxySettings = proxySettings;
     if (ignoreSsl) {
       Protocol easyhttps =
           new Protocol("https", (ProtocolSocketFactory) new EasySSLProtocolSocketFactory(), 443);
@@ -212,6 +218,23 @@ public class StashApiClient {
     //                }
     //            }
     //        }
+
+    String proxyHost = (proxySettings != null) ? proxySettings.getString("proxyHost") : null;
+    int proxyPort = (proxySettings != null) ? proxySettings.getInt("proxyPort") : null;
+    String proxyUser = (proxySettings != null) ? proxySettings.getString("proxyUser") : null;
+    String proxyPass = (proxySettings != null) ? proxySettings.getString("proxyPass") : null;
+    if (proxyHost != null && !"".equals(proxyHost.trim())) {
+      logger.info("Using proxy (host=" + proxyHost + ")");
+      client.getHostConfiguration().setProxy(proxyHost, proxyPort);
+      if (proxyUser != null && !"".equals(proxyUser.trim())) {
+        logger.info("Using proxy authentication (user=" + proxyUser + ")");
+        client
+            .getState()
+            .setProxyCredentials(
+                AuthScope.ANY, new UsernamePasswordCredentials(proxyUser, proxyPass));
+      }
+    }
+
     return client;
   }
 

@@ -6,6 +6,24 @@
   <f:entry title="Stash URL" field="stashHost">
       <f:textbox />
   </f:entry>
+  <f:nested>
+    <table>
+      <f:optionalBlock title="Enable proxy" name="proxySettings" checked="${instance.getProxySettings() != null}">
+        <f:entry title="Proxy Host" field="proxyHost">
+          <f:textbox />
+        </f:entry>
+        <f:entry title="Proxy Port" field="proxyPort">
+          <f:textbox />
+        </f:entry>
+        <f:entry title="Proxy Username" field="proxyUser">
+          <f:textbox />
+        </f:entry>
+        <f:entry title="Password" field="proxyPass">
+          <f:password />
+        </f:entry>
+      </f:optionalBlock>
+    </table>
+  </f:nested>
   <f:entry title="Stash credentials (username/password)" field="credentialsId">
     <c:select />
   </f:entry>
