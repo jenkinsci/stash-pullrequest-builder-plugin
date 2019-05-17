@@ -145,7 +145,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     ProxyConfiguration proxy = null;
 
     switch (this.getProxyType()) {
-      case default:
+      default:
       case "jenkins":
         proxy = Jenkins.getInstance().proxy;
         break;
