@@ -1,6 +1,7 @@
 package stashpullrequestbuilder.stashpullrequestbuilder.stash;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.ProxyConfiguration;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -24,8 +25,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-
-import net.sf.json.JSONObject;
+import jenkins.model.Jenkins;
 import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpClient;
@@ -62,7 +62,7 @@ public class StashApiClient {
 
   private String apiBaseUrl;
 
-  private final JSONObject proxySettings;
+  private final ProxyConfiguration proxy;
 
   private String project;
   private String repositoryName;
@@ -70,7 +70,7 @@ public class StashApiClient {
 
   public StashApiClient(
       String stashHost,
-      JSONObject proxySettings,
+      ProxyConfiguration proxy,
       String username,
       String password,
       String project,
@@ -80,7 +80,7 @@ public class StashApiClient {
     this.project = project;
     this.repositoryName = repositoryName;
     this.apiBaseUrl = stashHost.replaceAll("/$", "") + "/rest/api/1.0/projects/";
-    this.proxySettings = proxySettings;
+    this.proxy = proxy;
     if (ignoreSsl) {
       Protocol easyhttps =
           new Protocol("https", (ProtocolSocketFactory) new EasySSLProtocolSocketFactory(), 443);
@@ -203,35 +203,20 @@ public class StashApiClient {
     httpParams.setParameter(
         CoreConnectionPNames.SO_TIMEOUT, StashApiClient.HTTP_SOCKET_TIMEOUT_SECONDS * 1000);
 
-    //        if (Jenkins.getInstance() != null) {
-    //            ProxyConfiguration proxy = Jenkins.getInstance().proxy;
-    //            if (proxy != null) {
-    //                logger.info("Jenkins proxy: " + proxy.name + ":" + proxy.port);
-    //                client.getHostConfiguration().setProxy(proxy.name, proxy.port);
-    //                String username = proxy.getUserName();
-    //                String password = proxy.getPassword();
-    //                // Consider it to be passed if username specified. Sufficient?
-    //                if (username != null && !"".equals(username.trim())) {
-    //                    logger.info("Using proxy authentication (user=" + username + ")");
-    //                    client.getState().setProxyCredentials(AuthScope.ANY,
-    //                        new UsernamePasswordCredentials(username, password));
-    //                }
-    //            }
-    //        }
+    if (Jenkins.getInstanceOrNull() != null && proxy != null) {
+      logger.info("Using proxy: " + proxy.name + ":" + proxy.port);
+      client.getHostConfiguration().setProxy(proxy.name, proxy.port);
 
-    String proxyHost = (proxySettings != null) ? proxySettings.getString("proxyHost") : null;
-    int proxyPort = (proxySettings != null) ? proxySettings.getInt("proxyPort") : null;
-    String proxyUser = (proxySettings != null) ? proxySettings.getString("proxyUser") : null;
-    String proxyPass = (proxySettings != null) ? proxySettings.getString("proxyPass") : null;
-    if (proxyHost != null && !"".equals(proxyHost.trim())) {
-      logger.info("Using proxy (host=" + proxyHost + ")");
-      client.getHostConfiguration().setProxy(proxyHost, proxyPort);
-      if (proxyUser != null && !"".equals(proxyUser.trim())) {
-        logger.info("Using proxy authentication (user=" + proxyUser + ")");
+      String username = proxy.getUserName();
+      String password = proxy.getPassword();
+
+      // Consider it to be passed if username specified. Sufficient?
+      if (username != null && !"".equals(username.trim())) {
+        logger.info("With proxy authentication (user=" + username + ")");
         client
             .getState()
             .setProxyCredentials(
-                AuthScope.ANY, new UsernamePasswordCredentials(proxyUser, proxyPass));
+                AuthScope.ANY, new UsernamePasswordCredentials(username, password));
       }
     }
 

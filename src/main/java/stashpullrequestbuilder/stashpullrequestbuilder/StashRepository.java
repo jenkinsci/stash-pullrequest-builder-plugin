@@ -69,7 +69,7 @@ public class StashRepository {
     client =
         new StashApiClient(
             trigger.getStashHost(),
-            trigger.getProxySettings(),
+            trigger.getProxy(),
             trigger.getUsername(),
             trigger.getPassword(),
             trigger.getProjectCode(),

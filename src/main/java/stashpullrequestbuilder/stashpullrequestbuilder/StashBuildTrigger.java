@@ -10,6 +10,7 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
+import hudson.ProxyConfiguration;
 import hudson.model.AbstractProject;
 import hudson.model.Cause;
 import hudson.model.Executor;
@@ -54,7 +55,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
   private final String projectPath;
   private final String cron;
   private final String stashHost;
-  private final JSONObject proxySettings;
+  private transient JSONObject proxySettings;
   private final String credentialsId;
   private final String projectCode;
   private final String repositoryName;
@@ -130,6 +131,45 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
   public JSONObject getProxySettings() {
     return proxySettings;
+  }
+
+  public JSONObject getProxyDetails() {
+    return this.getProxySettings().getJSONObject("proxyChoice");
+  }
+
+  private String getProxyType() {
+    return this.getProxyDetails().getString("value");
+  }
+
+  public ProxyConfiguration getProxy() {
+    ProxyConfiguration proxy = null;
+
+    switch (this.getProxyType()) {
+      case "jenkins":
+        proxy = Jenkins.getInstance().proxy;
+        break;
+      case "custom":
+        JSONObject proxyDetails = this.getProxyDetails();
+
+        proxy =
+            new ProxyConfiguration(
+                proxyDetails.getString("proxyHost"),
+                proxyDetails.getInt("proxyPort"),
+                proxyDetails.getString("proxyUser"),
+                proxyDetails.getString("proxyPass"));
+    }
+
+    return proxy;
+  }
+
+  /**
+   * Helper method for the jelly view to determine proxy type.
+   *
+   * @param type
+   * @return
+   */
+  public boolean isProxyType(String type) {
+    return (getProxyType().equalsIgnoreCase(type)) ? true : false;
   }
 
   public String getProjectPath() {
