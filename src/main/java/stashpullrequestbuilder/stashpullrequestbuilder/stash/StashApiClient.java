@@ -204,7 +204,7 @@ public class StashApiClient {
         CoreConnectionPNames.SO_TIMEOUT, StashApiClient.HTTP_SOCKET_TIMEOUT_SECONDS * 1000);
 
     if (Jenkins.getInstanceOrNull() != null && proxy != null) {
-      logger.info("Using proxy: " + proxy.name + ":" + proxy.port);
+      logger.fine("Using proxy: " + proxy.name + ":" + proxy.port);
       client.getHostConfiguration().setProxy(proxy.name, proxy.port);
 
       String username = proxy.getUserName();
@@ -212,7 +212,7 @@ public class StashApiClient {
 
       // Consider it to be passed if username specified. Sufficient?
       if (username != null && !"".equals(username.trim())) {
-        logger.info("With proxy authentication (user=" + username + ")");
+        logger.fine("With proxy authentication (user=" + username + ")");
         client
             .getState()
             .setProxyCredentials(
