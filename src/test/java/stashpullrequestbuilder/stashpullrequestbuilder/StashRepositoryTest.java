@@ -30,6 +30,7 @@ public class StashRepositoryTest {
 
   private StashRepository stashRepository;
   private StashPullRequestResponseValueRepositoryBranch branch;
+  private List<StashPullRequestResponseValue> pullRequestList;
 
   @Mock private StashBuildTrigger trigger;
   @Mock private AbstractProject<?, ?> project;
@@ -46,6 +47,8 @@ public class StashRepositoryTest {
     stashRepository = new StashRepository(project, trigger, stashApiClient);
     branch = new StashPullRequestResponseValueRepositoryBranch();
     branch.setName("feature/add-bloat");
+
+    pullRequestList = Collections.singletonList(pullRequest);
   }
 
   @Test
@@ -57,7 +60,7 @@ public class StashRepositoryTest {
 
   @Test
   public void getTargetPullRequestsAcceptsOpenPullRequests() {
-    when(stashApiClient.getPullRequests()).thenReturn(Collections.singletonList(pullRequest));
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(pullRequest.getState()).thenReturn("OPEN");
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(pullRequest.getFromRef()).thenReturn(repository);
@@ -69,7 +72,7 @@ public class StashRepositoryTest {
 
   @Test
   public void getTargetPullRequestsSkipsMergedPullRequests() {
-    when(stashApiClient.getPullRequests()).thenReturn(Collections.singletonList(pullRequest));
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(pullRequest.getState()).thenReturn("MERGED");
 
     assertThat(stashRepository.getTargetPullRequests(), empty());
@@ -77,7 +80,7 @@ public class StashRepositoryTest {
 
   @Test
   public void getTargetPullRequestsSkipsNullStatePullRequests() {
-    when(stashApiClient.getPullRequests()).thenReturn(Collections.singletonList(pullRequest));
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(pullRequest.getState()).thenReturn(null);
 
     assertThat(stashRepository.getTargetPullRequests(), empty());
@@ -85,7 +88,7 @@ public class StashRepositoryTest {
 
   @Test
   public void getTargetPullRequestsAcceptsMatchingBranches() {
-    when(stashApiClient.getPullRequests()).thenReturn(Collections.singletonList(pullRequest));
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(pullRequest.getState()).thenReturn("OPEN");
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn("release/.*,feature/.*,testing/.*");
@@ -99,7 +102,7 @@ public class StashRepositoryTest {
 
   @Test
   public void getTargetPullRequestsAcceptsMatchingBranchesWithPadding() {
-    when(stashApiClient.getPullRequests()).thenReturn(Collections.singletonList(pullRequest));
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(pullRequest.getState()).thenReturn("OPEN");
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild())
@@ -114,7 +117,7 @@ public class StashRepositoryTest {
 
   @Test
   public void getTargetPullRequestsSkipsMismatchingBranches() {
-    when(stashApiClient.getPullRequests()).thenReturn(Collections.singletonList(pullRequest));
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(pullRequest.getState()).thenReturn("OPEN");
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn("release/.*,testing/.*");
@@ -126,7 +129,7 @@ public class StashRepositoryTest {
 
   @Test
   public void getTargetPullRequestsAcceptsAnyBranchIfBranchesToBuildIsEmpty() {
-    when(stashApiClient.getPullRequests()).thenReturn(Collections.singletonList(pullRequest));
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(pullRequest.getState()).thenReturn("OPEN");
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn("");
@@ -139,7 +142,7 @@ public class StashRepositoryTest {
 
   @Test
   public void getTargetPullRequestsAcceptsAnyBranchIfBranchesToBuildIsNull() {
-    when(stashApiClient.getPullRequests()).thenReturn(Collections.singletonList(pullRequest));
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(pullRequest.getState()).thenReturn("OPEN");
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn(null);
@@ -152,7 +155,7 @@ public class StashRepositoryTest {
 
   @Test
   public void getTargetPullRequestsSkipsOnSkipPhraseInTitle() {
-    when(stashApiClient.getPullRequests()).thenReturn(Collections.singletonList(pullRequest));
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(pullRequest.getState()).thenReturn("OPEN");
     when(pullRequest.getTitle()).thenReturn("NO TEST");
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
@@ -166,7 +169,7 @@ public class StashRepositoryTest {
     comment.setText("NO TEST");
     List<StashPullRequestComment> comments = Collections.singletonList(comment);
 
-    when(stashApiClient.getPullRequests()).thenReturn(Collections.singletonList(pullRequest));
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(pullRequest.getState()).thenReturn("OPEN");
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(pullRequest.getTitle()).thenReturn("Add some bloat");
@@ -181,7 +184,7 @@ public class StashRepositoryTest {
 
   @Test
   public void getTargetPullRequestsSkipPhraseIsCaseInsensitive() {
-    when(stashApiClient.getPullRequests()).thenReturn(Collections.singletonList(pullRequest));
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(pullRequest.getState()).thenReturn("OPEN");
     when(pullRequest.getTitle()).thenReturn("Disable any testing");
     when(trigger.getCiSkipPhrases()).thenReturn("disable ANY Testing");
@@ -191,7 +194,7 @@ public class StashRepositoryTest {
 
   @Test
   public void getTargetPullRequestsSkipPhraseMatchedAsSubstring() {
-    when(stashApiClient.getPullRequests()).thenReturn(Collections.singletonList(pullRequest));
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(pullRequest.getState()).thenReturn("OPEN");
     when(pullRequest.getTitle()).thenReturn("This will get no testing whatsoever");
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
@@ -201,7 +204,7 @@ public class StashRepositoryTest {
 
   @Test
   public void getTargetPullRequestsSupportsMultipleSkipPhrasesAndPadding() {
-    when(stashApiClient.getPullRequests()).thenReturn(Collections.singletonList(pullRequest));
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(pullRequest.getState()).thenReturn("OPEN");
     when(pullRequest.getTitle()).thenReturn("This will get no testing whatsoever");
     when(trigger.getCiSkipPhrases()).thenReturn("\tuntestable , \n NO TEST\t, \r\ndon't worry!");
@@ -211,7 +214,7 @@ public class StashRepositoryTest {
 
   @Test
   public void getTargetPullRequestsBuildsIfSkipPhraseIsEmpty() {
-    when(stashApiClient.getPullRequests()).thenReturn(Collections.singletonList(pullRequest));
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(pullRequest.getState()).thenReturn("OPEN");
     when(pullRequest.getTitle()).thenReturn("NO TEST");
     when(trigger.getCiSkipPhrases()).thenReturn("");
@@ -224,7 +227,7 @@ public class StashRepositoryTest {
 
   @Test
   public void getTargetPullRequestsBuildsIfSkipPhraseIsNull() {
-    when(stashApiClient.getPullRequests()).thenReturn(Collections.singletonList(pullRequest));
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(pullRequest.getState()).thenReturn("OPEN");
     when(pullRequest.getTitle()).thenReturn("NO TEST");
     when(trigger.getCiSkipPhrases()).thenReturn(null);
