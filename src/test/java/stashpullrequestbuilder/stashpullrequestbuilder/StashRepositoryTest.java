@@ -68,9 +68,9 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsSkipsClosedPullRequests() {
+  public void getTargetPullRequestsSkipsMergedPullRequests() {
     when(stashApiClient.getPullRequests()).thenReturn(Collections.singletonList(pullRequest));
-    when(pullRequest.getState()).thenReturn("CLOSED");
+    when(pullRequest.getState()).thenReturn("MERGED");
 
     assertThat(stashRepository.getTargetPullRequests(), empty());
   }
