@@ -29,15 +29,15 @@ import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestRes
 public class StashRepositoryTest {
 
   private StashRepository stashRepository;
+  private StashPullRequestResponseValue pullRequest;
+  private StashPullRequestResponseValueRepository repository;
   private StashPullRequestResponseValueRepositoryBranch branch;
+  private StashPullRequestResponseValueRepositoryRepository repoRepo;
   private List<StashPullRequestResponseValue> pullRequestList;
 
   @Mock private StashBuildTrigger trigger;
   @Mock private AbstractProject<?, ?> project;
   @Mock private StashApiClient stashApiClient;
-  @Mock private StashPullRequestResponseValue pullRequest;
-  @Mock private StashPullRequestResponseValueRepository repository;
-  @Mock private StashPullRequestResponseValueRepositoryRepository repoRepo;
 
   @Rule public JenkinsRule jenkinsRule = new JenkinsRule();
   @Rule public MockitoRule rule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
@@ -45,8 +45,21 @@ public class StashRepositoryTest {
   @Before
   public void before() {
     stashRepository = new StashRepository(project, trigger, stashApiClient);
+
     branch = new StashPullRequestResponseValueRepositoryBranch();
     branch.setName("feature/add-bloat");
+
+    repoRepo = new StashPullRequestResponseValueRepositoryRepository();
+
+    repository = new StashPullRequestResponseValueRepository();
+    repository.setBranch(branch);
+    repository.setRepository(repoRepo);
+
+    pullRequest = new StashPullRequestResponseValue();
+    pullRequest.setFromRef(repository);
+    pullRequest.setToRef(repository);
+    pullRequest.setState("OPEN");
+    pullRequest.setTitle("Add some bloat");
 
     pullRequestList = Collections.singletonList(pullRequest);
   }
@@ -61,11 +74,7 @@ public class StashRepositoryTest {
   @Test
   public void getTargetPullRequestsAcceptsOpenPullRequests() {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(pullRequest.getState()).thenReturn("OPEN");
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
-    when(pullRequest.getFromRef()).thenReturn(repository);
-    when(pullRequest.getToRef()).thenReturn(repository);
-    when(repository.getRepository()).thenReturn(repoRepo);
 
     assertThat(stashRepository.getTargetPullRequests(), contains(pullRequest));
   }
@@ -73,7 +82,7 @@ public class StashRepositoryTest {
   @Test
   public void getTargetPullRequestsSkipsMergedPullRequests() {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(pullRequest.getState()).thenReturn("MERGED");
+    pullRequest.setState("MERGED");
 
     assertThat(stashRepository.getTargetPullRequests(), empty());
   }
@@ -81,7 +90,7 @@ public class StashRepositoryTest {
   @Test
   public void getTargetPullRequestsSkipsNullStatePullRequests() {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(pullRequest.getState()).thenReturn(null);
+    pullRequest.setState(null);
 
     assertThat(stashRepository.getTargetPullRequests(), empty());
   }
@@ -89,13 +98,8 @@ public class StashRepositoryTest {
   @Test
   public void getTargetPullRequestsAcceptsMatchingBranches() {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(pullRequest.getState()).thenReturn("OPEN");
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn("release/.*,feature/.*,testing/.*");
-    when(pullRequest.getFromRef()).thenReturn(repository);
-    when(pullRequest.getToRef()).thenReturn(repository);
-    when(repository.getBranch()).thenReturn(branch);
-    when(repository.getRepository()).thenReturn(repoRepo);
 
     assertThat(stashRepository.getTargetPullRequests(), contains(pullRequest));
   }
@@ -103,14 +107,9 @@ public class StashRepositoryTest {
   @Test
   public void getTargetPullRequestsAcceptsMatchingBranchesWithPadding() {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(pullRequest.getState()).thenReturn("OPEN");
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild())
         .thenReturn("\trelease/.*, \n\tfeature/.* \r\n, testing/.*\r");
-    when(pullRequest.getFromRef()).thenReturn(repository);
-    when(pullRequest.getToRef()).thenReturn(repository);
-    when(repository.getBranch()).thenReturn(branch);
-    when(repository.getRepository()).thenReturn(repoRepo);
 
     assertThat(stashRepository.getTargetPullRequests(), contains(pullRequest));
   }
@@ -118,11 +117,8 @@ public class StashRepositoryTest {
   @Test
   public void getTargetPullRequestsSkipsMismatchingBranches() {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(pullRequest.getState()).thenReturn("OPEN");
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn("release/.*,testing/.*");
-    when(pullRequest.getToRef()).thenReturn(repository);
-    when(repository.getBranch()).thenReturn(branch);
 
     assertThat(stashRepository.getTargetPullRequests(), empty());
   }
@@ -130,12 +126,8 @@ public class StashRepositoryTest {
   @Test
   public void getTargetPullRequestsAcceptsAnyBranchIfBranchesToBuildIsEmpty() {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(pullRequest.getState()).thenReturn("OPEN");
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn("");
-    when(pullRequest.getFromRef()).thenReturn(repository);
-    when(pullRequest.getToRef()).thenReturn(repository);
-    when(repository.getRepository()).thenReturn(repoRepo);
 
     assertThat(stashRepository.getTargetPullRequests(), contains(pullRequest));
   }
@@ -143,21 +135,17 @@ public class StashRepositoryTest {
   @Test
   public void getTargetPullRequestsAcceptsAnyBranchIfBranchesToBuildIsNull() {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(pullRequest.getState()).thenReturn("OPEN");
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn(null);
-    when(pullRequest.getFromRef()).thenReturn(repository);
-    when(pullRequest.getToRef()).thenReturn(repository);
-    when(repository.getRepository()).thenReturn(repoRepo);
 
     assertThat(stashRepository.getTargetPullRequests(), contains(pullRequest));
   }
 
   @Test
   public void getTargetPullRequestsSkipsOnSkipPhraseInTitle() {
+    pullRequest.setTitle("NO TEST");
+
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(pullRequest.getState()).thenReturn("OPEN");
-    when(pullRequest.getTitle()).thenReturn("NO TEST");
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
 
     assertThat(stashRepository.getTargetPullRequests(), empty());
@@ -170,12 +158,7 @@ public class StashRepositoryTest {
     List<StashPullRequestComment> comments = Collections.singletonList(comment);
 
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(pullRequest.getState()).thenReturn("OPEN");
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
-    when(pullRequest.getTitle()).thenReturn("Add some bloat");
-    when(pullRequest.getFromRef()).thenReturn(repository);
-    when(pullRequest.getToRef()).thenReturn(repository);
-    when(repository.getRepository()).thenReturn(repoRepo);
     when(stashApiClient.getPullRequestComments(any(), any(), any())).thenReturn(comments);
     when(project.getDisplayName()).thenReturn("Pull Request Builder Project");
 
@@ -184,9 +167,9 @@ public class StashRepositoryTest {
 
   @Test
   public void getTargetPullRequestsSkipPhraseIsCaseInsensitive() {
+    pullRequest.setTitle("Disable any testing");
+
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(pullRequest.getState()).thenReturn("OPEN");
-    when(pullRequest.getTitle()).thenReturn("Disable any testing");
     when(trigger.getCiSkipPhrases()).thenReturn("disable ANY Testing");
 
     assertThat(stashRepository.getTargetPullRequests(), empty());
@@ -194,9 +177,9 @@ public class StashRepositoryTest {
 
   @Test
   public void getTargetPullRequestsSkipPhraseMatchedAsSubstring() {
+    pullRequest.setTitle("This will get no testing whatsoever");
+
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(pullRequest.getState()).thenReturn("OPEN");
-    when(pullRequest.getTitle()).thenReturn("This will get no testing whatsoever");
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
 
     assertThat(stashRepository.getTargetPullRequests(), empty());
@@ -204,9 +187,9 @@ public class StashRepositoryTest {
 
   @Test
   public void getTargetPullRequestsSupportsMultipleSkipPhrasesAndPadding() {
+    pullRequest.setTitle("This will get no testing whatsoever");
+
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(pullRequest.getState()).thenReturn("OPEN");
-    when(pullRequest.getTitle()).thenReturn("This will get no testing whatsoever");
     when(trigger.getCiSkipPhrases()).thenReturn("\tuntestable , \n NO TEST\t, \r\ndon't worry!");
 
     assertThat(stashRepository.getTargetPullRequests(), empty());
@@ -214,26 +197,20 @@ public class StashRepositoryTest {
 
   @Test
   public void getTargetPullRequestsBuildsIfSkipPhraseIsEmpty() {
+    pullRequest.setTitle("NO TEST");
+
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(pullRequest.getState()).thenReturn("OPEN");
-    when(pullRequest.getTitle()).thenReturn("NO TEST");
     when(trigger.getCiSkipPhrases()).thenReturn("");
-    when(pullRequest.getFromRef()).thenReturn(repository);
-    when(pullRequest.getToRef()).thenReturn(repository);
-    when(repository.getRepository()).thenReturn(repoRepo);
 
     assertThat(stashRepository.getTargetPullRequests(), contains(pullRequest));
   }
 
   @Test
   public void getTargetPullRequestsBuildsIfSkipPhraseIsNull() {
+    pullRequest.setTitle("NO TEST");
+
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(pullRequest.getState()).thenReturn("OPEN");
-    when(pullRequest.getTitle()).thenReturn("NO TEST");
     when(trigger.getCiSkipPhrases()).thenReturn(null);
-    when(pullRequest.getFromRef()).thenReturn(repository);
-    when(pullRequest.getToRef()).thenReturn(repository);
-    when(repository.getRepository()).thenReturn(repoRepo);
 
     assertThat(stashRepository.getTargetPullRequests(), contains(pullRequest));
   }
