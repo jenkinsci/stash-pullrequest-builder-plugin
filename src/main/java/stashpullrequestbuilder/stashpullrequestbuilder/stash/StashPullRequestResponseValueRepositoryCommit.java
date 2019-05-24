@@ -4,13 +4,13 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class StashPullRequestResponseValueRepositoryCommit {
-    private String latestChangeset;
+  private String latestChangeset;
 
-    public String getHash() {
-        return latestChangeset;
-    }
+  public String getHash() {
+    return latestChangeset;
+  }
 
-    public void setHash(String hash) {
-        this.latestChangeset = hash;
-    }
+  public void setHash(String hash) {
+    this.latestChangeset = hash;
+  }
 }

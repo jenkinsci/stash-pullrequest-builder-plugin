@@ -4,33 +4,35 @@ import hudson.Extension;
 import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
 import hudson.model.listeners.RunListener;
-
-import javax.annotation.Nonnull;
+import java.lang.invoke.MethodHandles;
 import java.util.logging.Logger;
+import javax.annotation.Nonnull;
+import jenkins.model.ParameterizedJobMixIn;
 
-/**
- * Created by Nathan McCarthy
- */
+/** Created by Nathan McCarthy */
 @Extension
-public class StashBuildListener extends RunListener<AbstractBuild> {
-    private static final Logger logger = Logger.getLogger(StashBuildTrigger.class.getName());
+public class StashBuildListener extends RunListener<AbstractBuild<?, ?>> {
+  private static final Logger logger =
+      Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
 
-    @Override
-    public void onStarted(AbstractBuild abstractBuild, TaskListener listener) {
-        logger.info("BuildListener onStarted called.");
-        StashBuildTrigger trigger = StashBuildTrigger.getTrigger(abstractBuild.getProject());
-        if (trigger == null) {
-            return;
-        }
-        trigger.getBuilder().getBuilds().onStarted(abstractBuild);
+  @Override
+  public void onStarted(AbstractBuild<?, ?> abstractBuild, TaskListener listener) {
+    logger.info("BuildListener onStarted called.");
+    StashBuildTrigger trigger =
+        ParameterizedJobMixIn.getTrigger(abstractBuild.getParent(), StashBuildTrigger.class);
+    if (trigger == null) {
+      return;
     }
+    trigger.getBuilder().getBuilds().onStarted(abstractBuild);
+  }
 
-    @Override
-    public void onCompleted(AbstractBuild abstractBuild, @Nonnull TaskListener listener) {
-        StashBuildTrigger trigger = StashBuildTrigger.getTrigger(abstractBuild.getProject());
-        if (trigger == null) {
-            return;
-        }
-        trigger.getBuilder().getBuilds().onCompleted(abstractBuild, listener);
+  @Override
+  public void onCompleted(AbstractBuild<?, ?> abstractBuild, @Nonnull TaskListener listener) {
+    StashBuildTrigger trigger =
+        ParameterizedJobMixIn.getTrigger(abstractBuild.getParent(), StashBuildTrigger.class);
+    if (trigger == null) {
+      return;
     }
+    trigger.getBuilder().getBuilds().onCompleted(abstractBuild, listener);
+  }
 }

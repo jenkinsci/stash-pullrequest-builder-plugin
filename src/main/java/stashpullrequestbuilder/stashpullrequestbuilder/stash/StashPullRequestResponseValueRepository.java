@@ -5,118 +5,112 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
 
-/**
- * Created by Nathan McCarthy
- */
+/** Created by Nathan McCarthy */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class StashPullRequestResponseValueRepository {
-    private static final String REFS_PREFIX = "refs/";
-    private static final String HEADS_PREFIX = "heads/";
-    private StashPullRequestResponseValueRepositoryRepository repository;
+  private static final String REFS_PREFIX = "refs/";
+  private static final String HEADS_PREFIX = "heads/";
+  private StashPullRequestResponseValueRepositoryRepository repository;
 
-    @JsonIgnore
-    private StashPullRequestResponseValueRepositoryBranch branch;
+  @JsonIgnore private StashPullRequestResponseValueRepositoryBranch branch;
 
-    @JsonIgnore
-    private StashPullRequestResponseValueRepositoryCommit commit;
+  @JsonIgnore private StashPullRequestResponseValueRepositoryCommit commit;
 
-    private String latestChangeset;
-    private String id;
-    private String latestCommit;
+  private String latestChangeset;
+  private String id;
+  private String latestCommit;
 
+  @JsonProperty("id")
+  public String getId() {
+    return id;
+  }
 
-    @JsonProperty("id")
-    public String getId() {
-        return id;
+  @JsonProperty("id")
+  public void setId(String id) {
+    this.id = id;
+    this.branch = new StashPullRequestResponseValueRepositoryBranch();
+    this.branch.setName(convertIdToBranchName(id));
+  }
+
+  /**
+   * Convert a pull request identifier to a branch name. Assumption: A pull request identifier
+   * always looks like "refs/heads/master". The branch name is without the "refs/heads/" part. To be
+   * on the save side, this method will check for the "refs/" and the "heads/" and strip them
+   * accordingly.
+   *
+   * <p>More information about the Stash REST API can be found here: <a
+   * href="https://developer.atlassian.com/stash/docs/latest/">https://developer.atlassian.com/stash/docs/latest/</a>
+   *
+   * @param id The unique name of the pull request.
+   * @return The branch name
+   */
+  private String convertIdToBranchName(String id) {
+    String branchName = StringUtils.EMPTY;
+    if (StringUtils.isEmpty(id)) {
+      return branchName;
     }
 
-    @JsonProperty("id")
-    public void setId(String id) {
-        this.id = id;
-        this.branch = new StashPullRequestResponseValueRepositoryBranch();
-        this.branch.setName( convertIdToBranchName(id) );
+    branchName = id;
+
+    if (StringUtils.startsWith(branchName, REFS_PREFIX)) {
+      branchName = StringUtils.removeStart(branchName, REFS_PREFIX);
     }
 
-    /**
-     * Convert a pull request identifier to a branch name. Assumption: A pull request identifier always looks like
-     * "refs/heads/master". The branch name is without the "refs/heads/" part.
-     * To be on the save side, this method will check for the "refs/" and the "heads/" and strip them accordingly.
-     *
-     * More information about the Stash REST API can be found here:
-     * <a href="https://developer.atlassian.com/stash/docs/latest/">https://developer.atlassian.com/stash/docs/latest/</a>
-     *
-     * @param id The unique name of the pull request.
-     * @return The branch name
-     */
-    private String convertIdToBranchName(String id) {
-        String branchName = StringUtils.EMPTY;
-        if(StringUtils.isEmpty(id)){
-            return branchName;
-        }
-
-        branchName = id;
-
-        if(StringUtils.startsWith(branchName, REFS_PREFIX)){
-            branchName = StringUtils.removeStart(branchName, REFS_PREFIX);
-        }
-
-        if(StringUtils.startsWith(branchName, HEADS_PREFIX)){
-            branchName = StringUtils.removeStart(branchName, HEADS_PREFIX);
-        }
-
-        return branchName;
+    if (StringUtils.startsWith(branchName, HEADS_PREFIX)) {
+      branchName = StringUtils.removeStart(branchName, HEADS_PREFIX);
     }
 
-    @JsonProperty("latestChangeset")
-    public String getLatestChangeset() {
-        return latestChangeset;
-    }
+    return branchName;
+  }
 
-    @JsonProperty("latestChangeset")
-    public void setLatestChangeset(String latestChangeset) { //TODO
-        this.latestChangeset = latestChangeset;
-        this.commit = new StashPullRequestResponseValueRepositoryCommit();
-        this.commit.setHash(latestChangeset);
-    }
+  @JsonProperty("latestChangeset")
+  public String getLatestChangeset() {
+    return latestChangeset;
+  }
 
-    @JsonProperty("repository")
-    public StashPullRequestResponseValueRepositoryRepository getRepository() {
-        return repository;
-    }
+  @JsonProperty("latestChangeset")
+  public void setLatestChangeset(String latestChangeset) { // TODO
+    this.latestChangeset = latestChangeset;
+    this.commit = new StashPullRequestResponseValueRepositoryCommit();
+    this.commit.setHash(latestChangeset);
+  }
 
-    @JsonProperty("repository")
-    public void setRepository(StashPullRequestResponseValueRepositoryRepository repository) {
-        this.repository = repository;
-    }
+  @JsonProperty("repository")
+  public StashPullRequestResponseValueRepositoryRepository getRepository() {
+    return repository;
+  }
 
-    @JsonProperty("branch")
-    public StashPullRequestResponseValueRepositoryBranch getBranch() {
-        return branch;
-    }
+  @JsonProperty("repository")
+  public void setRepository(StashPullRequestResponseValueRepositoryRepository repository) {
+    this.repository = repository;
+  }
 
-    @JsonProperty("branch")
-    public void setBranch(StashPullRequestResponseValueRepositoryBranch branch) {
-        this.branch = branch;
-    }
+  @JsonProperty("branch")
+  public StashPullRequestResponseValueRepositoryBranch getBranch() {
+    return branch;
+  }
 
-    public StashPullRequestResponseValueRepositoryCommit getCommit() {
-        return commit;
-    }
+  @JsonProperty("branch")
+  public void setBranch(StashPullRequestResponseValueRepositoryBranch branch) {
+    this.branch = branch;
+  }
 
-    public void setCommit(StashPullRequestResponseValueRepositoryCommit commit) {
-        this.commit = commit;
-    }
+  public StashPullRequestResponseValueRepositoryCommit getCommit() {
+    return commit;
+  }
 
-    public String getLatestCommit() {
-        if(commit != null) {
-            return commit.getHash();
-        }
-        return latestCommit;
-    }
+  public void setCommit(StashPullRequestResponseValueRepositoryCommit commit) {
+    this.commit = commit;
+  }
 
-    public void setLatestCommit(String latestCommit) {
-        this.latestCommit = latestCommit;
+  public String getLatestCommit() {
+    if (commit != null) {
+      return commit.getHash();
     }
+    return latestCommit;
+  }
+
+  public void setLatestCommit(String latestCommit) {
+    this.latestCommit = latestCommit;
+  }
 }
-
-
