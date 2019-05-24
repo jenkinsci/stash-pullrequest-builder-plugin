@@ -1,3 +1,7 @@
+1.10
+-----
+ * Increase socket timeout to 30s #52
+
 1.9
 -----
 
