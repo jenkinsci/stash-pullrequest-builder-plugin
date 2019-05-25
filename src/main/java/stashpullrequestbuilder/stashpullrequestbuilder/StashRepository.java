@@ -30,6 +30,7 @@ import javax.annotation.Nullable;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient;
+import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient.StashApiException;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestComment;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestMergeableResponse;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestResponseValue;
@@ -91,9 +92,17 @@ public class StashRepository {
 
   public Collection<StashPullRequestResponseValue> getTargetPullRequests() {
     logger.info(format("Fetch PullRequests (%s).", job.getName()));
-    List<StashPullRequestResponseValue> pullRequests = client.getPullRequests();
     List<StashPullRequestResponseValue> targetPullRequests =
         new ArrayList<StashPullRequestResponseValue>();
+
+    List<StashPullRequestResponseValue> pullRequests;
+    try {
+      pullRequests = client.getPullRequests();
+    } catch (StashApiException e) {
+      logger.info(format("%s: cannot fetch pull request list: %s", job.getName(), e));
+      return targetPullRequests;
+    }
+
     for (StashPullRequestResponseValue pullRequest : pullRequests) {
       if (isBuildTarget(pullRequest)) {
         targetPullRequests.add(pullRequest);
@@ -138,7 +147,8 @@ public class StashRepository {
     return result;
   }
 
-  public Map<String, String> getAdditionalParameters(StashPullRequestResponseValue pullRequest) {
+  public Map<String, String> getAdditionalParameters(StashPullRequestResponseValue pullRequest)
+      throws StashApiException {
     StashPullRequestResponseValueRepository destination = pullRequest.getToRef();
     String owner = destination.getRepository().getProjectName();
     String repositoryName = destination.getRepository().getRepositoryName();
@@ -252,10 +262,29 @@ public class StashRepository {
 
   public void addFutureBuildTasks(Collection<StashPullRequestResponseValue> pullRequests) {
     for (StashPullRequestResponseValue pullRequest : pullRequests) {
-      Map<String, String> additionalParameters = getAdditionalParameters(pullRequest);
-      if (trigger.getDeletePreviousBuildFinishComments()) {
-        deletePreviousBuildFinishedComments(pullRequest);
+      Map<String, String> additionalParameters;
+
+      try {
+        additionalParameters = getAdditionalParameters(pullRequest);
+      } catch (StashApiException e) {
+        logger.info(
+            format(
+                "%s: cannot read additional parameters for pull request %s, skipping: %s",
+                job.getName(), pullRequest.getId(), e));
+        continue;
       }
+
+      if (trigger.getDeletePreviousBuildFinishComments()) {
+        try {
+          deletePreviousBuildFinishedComments(pullRequest);
+        } catch (StashApiException e) {
+          logger.info(
+              format(
+                  "%s: cannot delete old \"BuildFinished\" comments for pull request %s: %s",
+                  job.getName(), pullRequest, e));
+        }
+      }
+
       String commentId = postBuildStartCommentTo(pullRequest);
       StashCause cause =
           new StashCause(
@@ -367,7 +396,8 @@ public class StashRepository {
     return true;
   }
 
-  private void deletePreviousBuildFinishedComments(StashPullRequestResponseValue pullRequest) {
+  private void deletePreviousBuildFinishedComments(StashPullRequestResponseValue pullRequest)
+      throws StashApiException {
 
     StashPullRequestResponseValueRepository destination = pullRequest.getToRef();
     String owner = destination.getRepository().getProjectName();
@@ -436,8 +466,13 @@ public class StashRepository {
     String destinationCommit = destination.getLatestCommit();
 
     String id = pullRequest.getId();
-    List<StashPullRequestComment> comments =
-        client.getPullRequestComments(owner, repositoryName, id);
+    List<StashPullRequestComment> comments;
+    try {
+      comments = client.getPullRequestComments(owner, repositoryName, id);
+    } catch (StashApiException e) {
+      logger.info(format("%s: cannot read pull request comments: %s", job.getName(), e));
+      return false;
+    }
 
     if (comments != null) {
       // Start with most recent comments

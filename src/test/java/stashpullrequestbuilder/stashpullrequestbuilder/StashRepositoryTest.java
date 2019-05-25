@@ -4,6 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.emptyArray;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
@@ -29,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import jenkins.model.Jenkins;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,6 +43,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
 import org.mockito.quality.Strictness;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient;
+import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient.StashApiException;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestComment;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestResponseValue;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestResponseValueRepository;
@@ -123,14 +126,14 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsReturnsEmptyListForNoPullRequests() {
+  public void getTargetPullRequestsReturnsEmptyListForNoPullRequests() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(Collections.emptyList());
 
     assertThat(stashRepository.getTargetPullRequests(), empty());
   }
 
   @Test
-  public void getTargetPullRequestsAcceptsOpenPullRequests() {
+  public void getTargetPullRequestsAcceptsOpenPullRequests() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
 
@@ -138,7 +141,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsSkipsMergedPullRequests() {
+  public void getTargetPullRequestsSkipsMergedPullRequests() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     pullRequest.setState("MERGED");
 
@@ -146,7 +149,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsSkipsNullStatePullRequests() {
+  public void getTargetPullRequestsSkipsNullStatePullRequests() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     pullRequest.setState(null);
 
@@ -154,7 +157,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsAcceptsMatchingBranches() {
+  public void getTargetPullRequestsAcceptsMatchingBranches() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn("release/.*,feature/.*,testing/.*");
@@ -163,7 +166,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsAcceptsMatchingBranchesWithPadding() {
+  public void getTargetPullRequestsAcceptsMatchingBranchesWithPadding() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild())
@@ -173,7 +176,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsSkipsMismatchingBranches() {
+  public void getTargetPullRequestsSkipsMismatchingBranches() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn("release/.*,testing/.*");
@@ -182,7 +185,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsAcceptsAnyBranchIfBranchesToBuildIsEmpty() {
+  public void getTargetPullRequestsAcceptsAnyBranchIfBranchesToBuildIsEmpty() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn("");
@@ -191,7 +194,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsAcceptsAnyBranchIfBranchesToBuildIsNull() {
+  public void getTargetPullRequestsAcceptsAnyBranchIfBranchesToBuildIsNull() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn(null);
@@ -200,7 +203,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsSkipsOnSkipPhraseInTitle() {
+  public void getTargetPullRequestsSkipsOnSkipPhraseInTitle() throws Exception {
     pullRequest.setTitle("NO TEST");
 
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
@@ -210,7 +213,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsSkipsOnSkipPhraseInComments() {
+  public void getTargetPullRequestsSkipsOnSkipPhraseInComments() throws Exception {
     StashPullRequestComment comment = new StashPullRequestComment();
     comment.setText("NO TEST");
     List<StashPullRequestComment> comments = Collections.singletonList(comment);
@@ -224,7 +227,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsPrioritizesLatestComments() {
+  public void getTargetPullRequestsPrioritizesLatestComments() throws Exception {
     StashPullRequestComment comment1 = new StashPullRequestComment();
     comment1.setCommentId(1);
     comment1.setText("NO TEST");
@@ -245,7 +248,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsSkipPhraseIsCaseInsensitive() {
+  public void getTargetPullRequestsSkipPhraseIsCaseInsensitive() throws Exception {
     pullRequest.setTitle("Disable any testing");
 
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
@@ -255,7 +258,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsSkipPhraseMatchedAsSubstring() {
+  public void getTargetPullRequestsSkipPhraseMatchedAsSubstring() throws Exception {
     pullRequest.setTitle("This will get no testing whatsoever");
 
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
@@ -265,7 +268,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsSupportsMultipleSkipPhrasesAndPadding() {
+  public void getTargetPullRequestsSupportsMultipleSkipPhrasesAndPadding() throws Exception {
     pullRequest.setTitle("This will get no testing whatsoever");
 
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
@@ -275,7 +278,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsBuildsIfSkipPhraseIsEmpty() {
+  public void getTargetPullRequestsBuildsIfSkipPhraseIsEmpty() throws Exception {
     pullRequest.setTitle("NO TEST");
 
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
@@ -285,7 +288,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsBuildsIfSkipPhraseIsNull() {
+  public void getTargetPullRequestsBuildsIfSkipPhraseIsNull() throws Exception {
     pullRequest.setTitle("NO TEST");
 
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
@@ -295,7 +298,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getAdditionalParametersUsesNewestParameterDefinition() {
+  public void getAdditionalParametersUsesNewestParameterDefinition() throws Exception {
     StashPullRequestComment comment1 = new StashPullRequestComment();
     comment1.setCommentId(1);
     comment1.setText("p:key=value1");
@@ -314,7 +317,8 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getAdditionalParametersUsesNewestParameterDefinitionRegardlessOfListOrder() {
+  public void getAdditionalParametersUsesNewestParameterDefinitionRegardlessOfListOrder()
+      throws Exception {
     StashPullRequestComment comment1 = new StashPullRequestComment();
     comment1.setCommentId(1);
     comment1.setText("p:key=value1");
@@ -333,7 +337,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void addFutureBuildTasksRemovesOldBuildFinishedCommentsIfEnabled() {
+  public void addFutureBuildTasksRemovesOldBuildFinishedCommentsIfEnabled() throws Exception {
     StashPullRequestComment comment1 = new StashPullRequestComment();
     comment1.setCommentId(1);
     comment1.setText("[*BuildFinished* **MyProject**] DEADBEEF into 1BADFACE");
@@ -436,5 +440,34 @@ public class StashRepositoryTest {
     List<ParameterValue> parameters = captureBuildParameters();
 
     assertThat(parameters, is(empty()));
+  }
+
+  @Test
+  public void getTargetPullRequests_returns_empty_if_getPullRequests_throws() throws Exception {
+    when(stashApiClient.getPullRequests()).thenThrow(new StashApiException("cannot read PR list"));
+
+    assertThat(stashRepository.getTargetPullRequests(), is(empty()));
+  }
+
+  @Test
+  public void getTargetPullRequests_skips_pull_request_if_getPullRequestComments_throws()
+      throws Exception {
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
+    when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
+    when(stashApiClient.getPullRequestComments(any(), any(), any()))
+        .thenThrow(new StashApiException("cannot read PR comments"));
+
+    assertThat(stashRepository.getTargetPullRequests(), is(empty()));
+  }
+
+  @Test
+  public void addFutureBuildTasks_skips_scheduling_build_if_getPullRequestComments_throws()
+      throws Exception {
+    when(stashApiClient.getPullRequestComments(any(), any(), any()))
+        .thenThrow(new StashApiException("cannot read PR comments"));
+
+    stashRepository.addFutureBuildTasks(pullRequestList);
+
+    assertThat(Jenkins.getInstance().getQueue().getItems(), is(emptyArray()));
   }
 }

@@ -1,5 +1,7 @@
 package stashpullrequestbuilder.stashpullrequestbuilder.stash;
 
+import static java.lang.String.format;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,7 +13,6 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -89,7 +90,7 @@ public class StashApiClient {
     }
   }
 
-  public List<StashPullRequestResponseValue> getPullRequests() {
+  public List<StashPullRequestResponseValue> getPullRequests() throws StashApiException {
     List<StashPullRequestResponseValue> pullRequestResponseValues =
         new ArrayList<StashPullRequestResponseValue>();
     try {
@@ -106,13 +107,13 @@ public class StashApiClient {
       }
       return pullRequestResponseValues;
     } catch (IOException e) {
-      logger.log(Level.WARNING, "invalid pull request response.", e);
+      throw new StashApiException("Cannot read list of pull requests", e);
     }
-    return Collections.emptyList();
   }
 
   public List<StashPullRequestComment> getPullRequestComments(
-      String projectCode, String commentRepositoryName, String pullRequestId) {
+      String projectCode, String commentRepositoryName, String pullRequestId)
+      throws StashApiException {
 
     try {
       boolean isLastPage = false;
@@ -139,9 +140,12 @@ public class StashApiClient {
       }
       return extractComments(commentResponses);
     } catch (Exception e) {
-      logger.log(Level.WARNING, "invalid pull request response.", e);
+      throw new StashApiException(
+          format(
+              "%s/%s: cannot read comments for pull request %s",
+              projectCode, commentRepositoryName, pullRequestId),
+          e);
     }
-    return Collections.emptyList();
   }
 
   public void deletePullRequestComment(String pullRequestId, String commentId) {
@@ -560,6 +564,25 @@ public class StashApiClient {
     public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
         throws IOException {
       return this.getSSLContext().getSocketFactory().createSocket(socket, host, port, autoClose);
+    }
+  }
+
+  /**
+   * Indicates an error during interaction with the Bitbucket Server
+   *
+   * <p>This exception must be caught inside the plugin. Typical handling would be to retry the
+   * operation during the next polling cycle in the hope that the server or the network would
+   * recover by then.
+   */
+  public static class StashApiException extends Exception {
+    private static final long serialVersionUID = 1L;
+
+    public StashApiException(String message) {
+      super(message);
+    }
+
+    public StashApiException(String message, Throwable cause) {
+      super(message, cause);
     }
   }
 }
