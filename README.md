@@ -111,6 +111,8 @@ If you want to rerun pull request test, write *"test this please"* comment to yo
 
 If you want to add additional parameters to the triggered build, add comments using the pattern `p:<parameter_name>=<value>`, one at each line, prefixed with `p:`. If the same parameter name appears multiple times the latest comment with that parameter will decide the value.
 
+For security reasons, all the parameters should also be defined in the project. Select **This project is parameterized** in the configuration and add string parameters with the names you want to be read from the comments. Parameters with names not defined in the project will be ignored.
+
 **Example:**
 
     test this please

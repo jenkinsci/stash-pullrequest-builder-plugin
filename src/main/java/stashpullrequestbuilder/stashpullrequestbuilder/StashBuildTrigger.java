@@ -47,7 +47,7 @@ import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 /** Created by Nathan McCarthy */
-@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+@SuppressFBWarnings({"NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", "NP_NULL_ON_SOME_PATH"})
 public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
   private static final Logger logger =
       Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
@@ -213,14 +213,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
   }
 
   public QueueTaskFuture<?> startJob(StashCause cause) {
-    List<ParameterValue> values = getDefaultParameters();
-
-    Map<String, String> additionalParameters = cause.getAdditionalParameters();
-    if (additionalParameters != null) {
-      for (Map.Entry<String, String> parameter : additionalParameters.entrySet()) {
-        values.add(new StringParameterValue(parameter.getKey(), parameter.getValue()));
-      }
-    }
+    List<ParameterValue> values = getParameters(cause);
 
     if (isCancelOutdatedJobsEnabled()) {
       cancelPreviousJobsInQueueThatMatch(cause);
@@ -271,19 +264,31 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     return false;
   }
 
-  private List<ParameterValue> getDefaultParameters() {
+  private List<ParameterValue> getParameters(StashCause cause) {
     List<ParameterValue> values = new ArrayList<ParameterValue>();
+
+    Map<String, String> additionalParameters = cause.getAdditionalParameters();
+
     ParametersDefinitionProperty definitionProperty =
         this.job.getProperty(ParametersDefinitionProperty.class);
-    if (definitionProperty != null) {
-      for (ParameterDefinition definition : definitionProperty.getParameterDefinitions()) {
-        ParameterValue defaultValue = definition.getDefaultParameterValue();
-        if (defaultValue == null) {
-          // Can happen for File parameter and Run parameter
-          logger.fine(format("No default value for the parameter '%s'.", definition.getName()));
-        } else {
-          values.add(defaultValue);
+
+    if (definitionProperty == null) {
+      return values;
+    }
+
+    for (ParameterDefinition definition : definitionProperty.getParameterDefinitions()) {
+      String parameterName = definition.getName();
+      ParameterValue parameterValue = definition.getDefaultParameterValue();
+
+      if (additionalParameters != null) {
+        String additionalParameter = additionalParameters.get(parameterName);
+        if (additionalParameter != null) {
+          parameterValue = new StringParameterValue(parameterName, additionalParameter);
         }
+      }
+
+      if (parameterValue != null) {
+        values.add(parameterValue);
       }
     }
     return values;
