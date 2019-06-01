@@ -1,13 +1,22 @@
 package stashpullrequestbuilder.stashpullrequestbuilder;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.aMapWithSize;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import hudson.model.AbstractProject;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -166,6 +175,27 @@ public class StashRepositoryTest {
   }
 
   @Test
+  public void getTargetPullRequestsPrioritizesLatestComments() {
+    StashPullRequestComment comment1 = new StashPullRequestComment();
+    comment1.setCommentId(1);
+    comment1.setText("NO TEST");
+
+    StashPullRequestComment comment2 = new StashPullRequestComment();
+    comment2.setCommentId(2);
+    comment2.setText("DO TEST");
+
+    List<StashPullRequestComment> comments = Arrays.asList(comment1, comment2);
+
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
+    when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
+    when(trigger.getCiBuildPhrases()).thenReturn("DO TEST");
+    when(stashApiClient.getPullRequestComments(any(), any(), any())).thenReturn(comments);
+    when(project.getDisplayName()).thenReturn("Pull Request Builder Project");
+
+    assertThat(stashRepository.getTargetPullRequests(), contains(pullRequest));
+  }
+
+  @Test
   public void getTargetPullRequestsSkipPhraseIsCaseInsensitive() {
     pullRequest.setTitle("Disable any testing");
 
@@ -213,5 +243,71 @@ public class StashRepositoryTest {
     when(trigger.getCiSkipPhrases()).thenReturn(null);
 
     assertThat(stashRepository.getTargetPullRequests(), contains(pullRequest));
+  }
+
+  @Test
+  public void getAdditionalParametersUsesNewestParameterDefinition() {
+    StashPullRequestComment comment1 = new StashPullRequestComment();
+    comment1.setCommentId(1);
+    comment1.setText("p:key=value1");
+
+    StashPullRequestComment comment2 = new StashPullRequestComment();
+    comment2.setCommentId(2);
+    comment2.setText("p:key=value2");
+
+    List<StashPullRequestComment> comments = Arrays.asList(comment1, comment2);
+    when(stashApiClient.getPullRequestComments(any(), any(), any())).thenReturn(comments);
+
+    Map<String, String> parameters = stashRepository.getAdditionalParameters(pullRequest);
+
+    assertThat(parameters, is(aMapWithSize(1)));
+    assertThat(parameters, hasEntry("key", "value2"));
+  }
+
+  @Test
+  public void getAdditionalParametersUsesNewestParameterDefinitionRegardlessOfListOrder() {
+    StashPullRequestComment comment1 = new StashPullRequestComment();
+    comment1.setCommentId(1);
+    comment1.setText("p:key=value1");
+
+    StashPullRequestComment comment2 = new StashPullRequestComment();
+    comment2.setCommentId(2);
+    comment2.setText("p:key=value2");
+
+    List<StashPullRequestComment> comments = Arrays.asList(comment2, comment1);
+    when(stashApiClient.getPullRequestComments(any(), any(), any())).thenReturn(comments);
+
+    Map<String, String> parameters = stashRepository.getAdditionalParameters(pullRequest);
+
+    assertThat(parameters, is(aMapWithSize(1)));
+    assertThat(parameters, hasEntry("key", "value2"));
+  }
+
+  @Test
+  public void addFutureBuildTasksRemovesOldBuildFinishedCommentsIfEnabled() {
+    StashPullRequestComment comment1 = new StashPullRequestComment();
+    comment1.setCommentId(1);
+    comment1.setText("[*BuildFinished* **MyProject**] DEADBEEF into 1BADFACE");
+
+    StashPullRequestComment comment2 = new StashPullRequestComment();
+    comment2.setCommentId(2);
+    comment2.setText("User comment");
+
+    StashPullRequestComment response = new StashPullRequestComment();
+    response.setCommentId(3);
+
+    List<StashPullRequestComment> comments = Arrays.asList(comment2, comment1);
+    when(stashApiClient.getPullRequestComments(any(), any(), any())).thenReturn(comments);
+    when(stashApiClient.postPullRequestComment(any(), any())).thenReturn(response);
+
+    when(trigger.getDeletePreviousBuildFinishComments()).thenReturn(true);
+    when(trigger.getStashHost()).thenReturn("StashHost");
+    when(project.getDisplayName()).thenReturn("MyProject");
+
+    pullRequest.setId("123");
+    stashRepository.addFutureBuildTasks(pullRequestList);
+
+    verify(stashApiClient, times(1)).deletePullRequestComment(eq("123"), eq("1"));
+    verify(stashApiClient, times(0)).deletePullRequestComment(eq("123"), eq("2"));
   }
 }

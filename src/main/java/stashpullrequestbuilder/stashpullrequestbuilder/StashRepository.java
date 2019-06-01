@@ -135,8 +135,8 @@ public class StashRepository {
     List<StashPullRequestComment> comments =
         client.getPullRequestComments(owner, repositoryName, id);
     if (comments != null) {
+      // Process newest comments last so they can override older comments
       Collections.sort(comments);
-      //          Collections.reverse(comments);
 
       Map<String, String> result = new TreeMap<String, String>();
 
@@ -284,8 +284,6 @@ public class StashRepository {
         client.getPullRequestComments(owner, repositoryName, id);
 
     if (comments != null) {
-      Collections.sort(comments);
-      Collections.reverse(comments);
       for (StashPullRequestComment comment : comments) {
         String content = comment.getText();
         if (content == null || content.isEmpty()) {
@@ -348,8 +346,9 @@ public class StashRepository {
         client.getPullRequestComments(owner, repositoryName, id);
 
     if (comments != null) {
-      Collections.sort(comments);
-      Collections.reverse(comments);
+      // Start with most recent comments
+      Collections.sort(comments, Collections.reverseOrder());
+
       for (StashPullRequestComment comment : comments) {
         String content = comment.getText();
         if (content == null || content.isEmpty()) {
