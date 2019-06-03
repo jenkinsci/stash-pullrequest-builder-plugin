@@ -8,38 +8,20 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.model.AbstractProject;
-import hudson.model.Cause;
-import hudson.model.Executor;
 import hudson.model.Item;
-import hudson.model.ParameterDefinition;
-import hudson.model.ParameterValue;
-import hudson.model.ParametersAction;
-import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Queue;
-import hudson.model.Result;
-import hudson.model.Run;
-import hudson.model.StringParameterValue;
-import hudson.model.queue.QueueTaskFuture;
 import hudson.model.queue.Tasks;
 import hudson.security.ACL;
 import hudson.triggers.Trigger;
 import hudson.triggers.TriggerDescriptor;
 import hudson.util.ListBoxModel;
 import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -47,7 +29,6 @@ import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 /** Created by Nathan McCarthy */
-@SuppressFBWarnings({"NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", "NP_NULL_ON_SOME_PATH"})
 public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
   private static final Logger logger =
       Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
@@ -210,88 +191,6 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
   public StashPullRequestsBuilder getBuilder() {
     return this.stashPullRequestsBuilder;
-  }
-
-  public QueueTaskFuture<?> startJob(StashCause cause) {
-    List<ParameterValue> values = getParameters(cause);
-
-    if (isCancelOutdatedJobsEnabled()) {
-      cancelPreviousJobsInQueueThatMatch(cause);
-      abortRunningJobsThatMatch(cause);
-    }
-
-    return job.scheduleBuild2(job.getQuietPeriod(), cause, new ParametersAction(values));
-  }
-
-  private void cancelPreviousJobsInQueueThatMatch(@Nonnull StashCause stashCause) {
-    logger.fine("Looking for queued jobs that match PR ID: " + stashCause.getPullRequestId());
-    Queue queue = Jenkins.getInstance().getQueue();
-    for (Queue.Item item : queue.getItems()) {
-      if (hasCauseFromTheSamePullRequest(item.getCauses(), stashCause)) {
-        logger.info("Canceling item in queue: " + item);
-        queue.cancel(item);
-      }
-    }
-  }
-
-  private void abortRunningJobsThatMatch(@Nonnull StashCause stashCause) {
-    logger.fine("Looking for running jobs that match PR ID: " + stashCause.getPullRequestId());
-    for (Run<?, ?> run : job.getBuilds()) {
-      if (run.isBuilding() && hasCauseFromTheSamePullRequest(run.getCauses(), stashCause)) {
-        logger.info("Aborting build: " + run.getId() + " since PR is outdated");
-        Executor executor = run.getExecutor();
-        if (executor != null) {
-          executor.interrupt(Result.ABORTED);
-        }
-      }
-    }
-  }
-
-  private boolean hasCauseFromTheSamePullRequest(
-      @Nullable List<Cause> causes, @Nullable StashCause pullRequestCause) {
-    if (causes != null && pullRequestCause != null) {
-      for (Cause cause : causes) {
-        if (cause instanceof StashCause) {
-          StashCause sc = (StashCause) cause;
-          if (StringUtils.equals(sc.getPullRequestId(), pullRequestCause.getPullRequestId())
-              && StringUtils.equals(
-                  sc.getSourceRepositoryName(), pullRequestCause.getSourceRepositoryName())) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  }
-
-  private List<ParameterValue> getParameters(StashCause cause) {
-    List<ParameterValue> values = new ArrayList<ParameterValue>();
-
-    Map<String, String> additionalParameters = cause.getAdditionalParameters();
-
-    ParametersDefinitionProperty definitionProperty =
-        this.job.getProperty(ParametersDefinitionProperty.class);
-
-    if (definitionProperty == null) {
-      return values;
-    }
-
-    for (ParameterDefinition definition : definitionProperty.getParameterDefinitions()) {
-      String parameterName = definition.getName();
-      ParameterValue parameterValue = definition.getDefaultParameterValue();
-
-      if (additionalParameters != null) {
-        String additionalParameter = additionalParameters.get(parameterName);
-        if (additionalParameter != null) {
-          parameterValue = new StringParameterValue(parameterName, additionalParameter);
-        }
-      }
-
-      if (parameterValue != null) {
-        values.add(parameterValue);
-      }
-    }
-    return values;
   }
 
   @Override

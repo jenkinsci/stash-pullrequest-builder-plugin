@@ -5,23 +5,36 @@ import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import hudson.model.AbstractProject;
+import hudson.model.BooleanParameterDefinition;
+import hudson.model.FileParameterDefinition;
+import hudson.model.ParameterDefinition;
+import hudson.model.ParameterValue;
+import hudson.model.ParametersAction;
+import hudson.model.ParametersDefinitionProperty;
+import hudson.model.StringParameterDefinition;
+import hudson.model.StringParameterValue;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -38,6 +51,8 @@ import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestRes
 public class StashRepositoryTest {
 
   private StashRepository stashRepository;
+
+  private StashCause cause;
   private StashPullRequestResponseValue pullRequest;
   private StashPullRequestResponseValueRepository repository;
   private StashPullRequestResponseValueRepositoryBranch branch;
@@ -47,6 +62,7 @@ public class StashRepositoryTest {
   @Mock private StashBuildTrigger trigger;
   @Mock private AbstractProject<?, ?> project;
   @Mock private StashApiClient stashApiClient;
+  @Mock private ParametersDefinitionProperty parametersDefinitionProperty;
 
   @Rule public JenkinsRule jenkinsRule = new JenkinsRule();
   @Rule public MockitoRule rule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
@@ -71,6 +87,39 @@ public class StashRepositoryTest {
     pullRequest.setTitle("Add some bloat");
 
     pullRequestList = Collections.singletonList(pullRequest);
+  }
+
+  private StashCause makeCause(Map<String, String> additionalParameters) {
+    return new StashCause(
+        "StashHost",
+        "SourceBranch",
+        "TargetBranch",
+        "SourceRepositoryOwner",
+        "SourceRepositoryName",
+        "PullRequestId",
+        "DestinationRepositoryOwner",
+        "DestinationRepositoryName",
+        "PullRequestTitle",
+        "SourceCommitHash",
+        "DestinationCommitHash",
+        "BuildStartCommentId",
+        "PullRequestVersion",
+        additionalParameters);
+  }
+
+  private void jobSetup(ParameterDefinition... parameterDefinitions) {
+    when(project.getProperty(ParametersDefinitionProperty.class))
+        .thenReturn(parametersDefinitionProperty);
+    when(parametersDefinitionProperty.getParameterDefinitions())
+        .thenReturn(Arrays.asList(parameterDefinitions));
+  }
+
+  private List<ParameterValue> captureBuildParameters() {
+    ArgumentCaptor<ParametersAction> captor = ArgumentCaptor.forClass(ParametersAction.class);
+    stashRepository.startJob(cause);
+    verify(project, times(1)).scheduleBuild2(anyInt(), eq(cause), captor.capture());
+    ParametersAction parametersAction = captor.getValue();
+    return parametersAction.getAllParameters();
   }
 
   @Test
@@ -309,5 +358,83 @@ public class StashRepositoryTest {
 
     verify(stashApiClient, times(1)).deletePullRequestComment(eq("123"), eq("1"));
     verify(stashApiClient, times(0)).deletePullRequestComment(eq("123"), eq("2"));
+  }
+
+  @Test
+  public void startJobPassesParameterWithDefaultValue() {
+    cause = makeCause(null);
+    ParameterDefinition parameterDefinition =
+        new StringParameterDefinition("param1", "param1_default");
+    jobSetup(parameterDefinition);
+
+    List<ParameterValue> parameters = captureBuildParameters();
+
+    assertThat(parameters, hasSize(1));
+    assertThat(parameters.get(0).getName(), is("param1"));
+    assertThat(parameters.get(0).getValue(), is("param1_default"));
+  }
+
+  @Test
+  public void startJobPassesParameterWithValueFromStashCause() {
+    Map<String, String> prParameters = new TreeMap<>();
+    prParameters.put("param1", "param1_value");
+    cause = makeCause(prParameters);
+
+    ParameterDefinition parameterDefinition =
+        new StringParameterDefinition("param1", "param1_default");
+    jobSetup(parameterDefinition);
+
+    List<ParameterValue> parameters = captureBuildParameters();
+
+    assertThat(parameters, hasSize(1));
+    assertThat(parameters.get(0).getName(), is("param1"));
+    assertThat(parameters.get(0).getValue(), is("param1_value"));
+  }
+
+  @Test
+  public void startJobIgnoresParameterWithMismatchingName() {
+    Map<String, String> prParameters = new TreeMap<>();
+    prParameters.put("param2", "param2_value");
+    cause = makeCause(prParameters);
+
+    ParameterDefinition parameterDefinition =
+        new StringParameterDefinition("param1", "param1_default");
+    jobSetup(parameterDefinition);
+
+    List<ParameterValue> parameters = captureBuildParameters();
+
+    assertThat(parameters, hasSize(1));
+    assertThat(parameters.get(0).getName(), is("param1"));
+    assertThat(parameters.get(0).getValue(), is("param1_default"));
+  }
+
+  @Test
+  public void startJobReplacesValueOfNonStringParameter() {
+    Map<String, String> prParameters = new TreeMap<>();
+    prParameters.put("param1", "param1_value");
+    cause = makeCause(prParameters);
+
+    ParameterDefinition parameterDefinition =
+        new BooleanParameterDefinition("param1", false, "parameter 1");
+    jobSetup(parameterDefinition);
+
+    List<ParameterValue> parameters = captureBuildParameters();
+
+    assertThat(parameters, hasSize(1));
+    assertThat(parameters.get(0), instanceOf(StringParameterValue.class));
+    assertThat(parameters.get(0).getName(), is("param1"));
+    assertThat(parameters.get(0).getValue(), is("param1_value"));
+  }
+
+  @Test
+  public void startJobSkipsNullParameters() {
+    cause = makeCause(null);
+
+    ParameterDefinition parameterDefinition = new FileParameterDefinition("param1", "parameter 1");
+    jobSetup(parameterDefinition);
+
+    List<ParameterValue> parameters = captureBuildParameters();
+
+    assertThat(parameters, is(empty()));
   }
 }

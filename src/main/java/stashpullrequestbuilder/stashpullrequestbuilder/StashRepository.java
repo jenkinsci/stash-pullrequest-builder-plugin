@@ -3,7 +3,17 @@ package stashpullrequestbuilder.stashpullrequestbuilder;
 import static java.lang.String.format;
 
 import hudson.model.AbstractProject;
+import hudson.model.Cause;
+import hudson.model.Executor;
+import hudson.model.ParameterDefinition;
+import hudson.model.ParameterValue;
+import hudson.model.ParametersAction;
+import hudson.model.ParametersDefinitionProperty;
+import hudson.model.Queue;
 import hudson.model.Result;
+import hudson.model.Run;
+import hudson.model.StringParameterValue;
+import hudson.model.queue.QueueTaskFuture;
 import java.lang.invoke.MethodHandles;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -16,6 +26,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestComment;
@@ -156,6 +168,88 @@ public class StashRepository {
     return null;
   }
 
+  private boolean hasCauseFromTheSamePullRequest(
+      @Nullable List<Cause> causes, @Nullable StashCause pullRequestCause) {
+    if (causes != null && pullRequestCause != null) {
+      for (Cause cause : causes) {
+        if (cause instanceof StashCause) {
+          StashCause sc = (StashCause) cause;
+          if (StringUtils.equals(sc.getPullRequestId(), pullRequestCause.getPullRequestId())
+              && StringUtils.equals(
+                  sc.getSourceRepositoryName(), pullRequestCause.getSourceRepositoryName())) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  private void cancelPreviousJobsInQueueThatMatch(@Nonnull StashCause stashCause) {
+    logger.fine("Looking for queued jobs that match PR ID: " + stashCause.getPullRequestId());
+    Queue queue = Jenkins.getInstance().getQueue();
+    for (Queue.Item item : queue.getItems()) {
+      if (hasCauseFromTheSamePullRequest(item.getCauses(), stashCause)) {
+        logger.info("Canceling item in queue: " + item);
+        queue.cancel(item);
+      }
+    }
+  }
+
+  private void abortRunningJobsThatMatch(@Nonnull StashCause stashCause) {
+    logger.fine("Looking for running jobs that match PR ID: " + stashCause.getPullRequestId());
+    for (Run<?, ?> run : job.getBuilds()) {
+      if (run.isBuilding() && hasCauseFromTheSamePullRequest(run.getCauses(), stashCause)) {
+        logger.info("Aborting build: " + run.getId() + " since PR is outdated");
+        Executor executor = run.getExecutor();
+        if (executor != null) {
+          executor.interrupt(Result.ABORTED);
+        }
+      }
+    }
+  }
+
+  private List<ParameterValue> getParameters(StashCause cause) {
+    List<ParameterValue> values = new ArrayList<ParameterValue>();
+
+    Map<String, String> additionalParameters = cause.getAdditionalParameters();
+
+    ParametersDefinitionProperty definitionProperty =
+        this.job.getProperty(ParametersDefinitionProperty.class);
+
+    if (definitionProperty == null) {
+      return values;
+    }
+
+    for (ParameterDefinition definition : definitionProperty.getParameterDefinitions()) {
+      String parameterName = definition.getName();
+      ParameterValue parameterValue = definition.getDefaultParameterValue();
+
+      if (additionalParameters != null) {
+        String additionalParameter = additionalParameters.get(parameterName);
+        if (additionalParameter != null) {
+          parameterValue = new StringParameterValue(parameterName, additionalParameter);
+        }
+      }
+
+      if (parameterValue != null) {
+        values.add(parameterValue);
+      }
+    }
+    return values;
+  }
+
+  public QueueTaskFuture<?> startJob(StashCause cause) {
+    List<ParameterValue> values = getParameters(cause);
+
+    if (trigger.isCancelOutdatedJobsEnabled()) {
+      cancelPreviousJobsInQueueThatMatch(cause);
+      abortRunningJobsThatMatch(cause);
+    }
+
+    return job.scheduleBuild2(job.getQuietPeriod(), cause, new ParametersAction(values));
+  }
+
   public void addFutureBuildTasks(Collection<StashPullRequestResponseValue> pullRequests) {
     for (StashPullRequestResponseValue pullRequest : pullRequests) {
       Map<String, String> additionalParameters = getAdditionalParameters(pullRequest);
@@ -179,7 +273,7 @@ public class StashRepository {
               commentId,
               pullRequest.getVersion(),
               additionalParameters);
-      trigger.startJob(cause);
+      startJob(cause);
     }
   }
 
