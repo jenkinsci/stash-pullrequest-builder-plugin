@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -90,6 +91,7 @@ public class StashApiClient {
     }
   }
 
+  @Nonnull
   public List<StashPullRequestResponseValue> getPullRequests() throws StashApiException {
     List<StashPullRequestResponseValue> pullRequestResponseValues =
         new ArrayList<StashPullRequestResponseValue>();
@@ -111,6 +113,7 @@ public class StashApiClient {
     }
   }
 
+  @Nonnull
   public List<StashPullRequestComment> getPullRequestComments(
       String projectCode, String commentRepositoryName, String pullRequestId)
       throws StashApiException {
@@ -453,6 +456,7 @@ public class StashApiClient {
     return parsedResponse;
   }
 
+  @Nonnull
   private List<StashPullRequestComment> extractComments(
       List<StashPullRequestActivityResponse> responses) {
     List<StashPullRequestComment> comments = new ArrayList<StashPullRequestComment>();
