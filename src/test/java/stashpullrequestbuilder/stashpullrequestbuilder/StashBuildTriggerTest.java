@@ -22,7 +22,7 @@ import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.StringParameterDefinition;
 import hudson.model.StringParameterValue;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -95,10 +95,11 @@ public class StashBuildTriggerTest {
         additionalParameters);
   }
 
-  private void jobSetup(List<ParameterDefinition> parameterDefinitions) {
+  private void jobSetup(ParameterDefinition... parameterDefinitions) {
     when(project.getProperty(ParametersDefinitionProperty.class))
         .thenReturn(parametersDefinitionProperty);
-    when(parametersDefinitionProperty.getParameterDefinitions()).thenReturn(parameterDefinitions);
+    when(parametersDefinitionProperty.getParameterDefinitions())
+        .thenReturn(Arrays.asList(parameterDefinitions));
   }
 
   private List<ParameterValue> captureBuildParameters() {
@@ -114,7 +115,7 @@ public class StashBuildTriggerTest {
     cause = makeCause(null);
     ParameterDefinition parameterDefinition =
         new StringParameterDefinition("param1", "param1_default");
-    jobSetup(Collections.singletonList(parameterDefinition));
+    jobSetup(parameterDefinition);
 
     List<ParameterValue> parameters = captureBuildParameters();
 
@@ -131,7 +132,7 @@ public class StashBuildTriggerTest {
 
     ParameterDefinition parameterDefinition =
         new StringParameterDefinition("param1", "param1_default");
-    jobSetup(Collections.singletonList(parameterDefinition));
+    jobSetup(parameterDefinition);
 
     List<ParameterValue> parameters = captureBuildParameters();
 
@@ -148,7 +149,7 @@ public class StashBuildTriggerTest {
 
     ParameterDefinition parameterDefinition =
         new StringParameterDefinition("param1", "param1_default");
-    jobSetup(Collections.singletonList(parameterDefinition));
+    jobSetup(parameterDefinition);
 
     List<ParameterValue> parameters = captureBuildParameters();
 
@@ -165,7 +166,7 @@ public class StashBuildTriggerTest {
 
     ParameterDefinition parameterDefinition =
         new BooleanParameterDefinition("param1", false, "parameter 1");
-    jobSetup(Collections.singletonList(parameterDefinition));
+    jobSetup(parameterDefinition);
 
     List<ParameterValue> parameters = captureBuildParameters();
 
@@ -180,7 +181,7 @@ public class StashBuildTriggerTest {
     cause = makeCause(null);
 
     ParameterDefinition parameterDefinition = new FileParameterDefinition("param1", "parameter 1");
-    jobSetup(Collections.singletonList(parameterDefinition));
+    jobSetup(parameterDefinition);
 
     List<ParameterValue> parameters = captureBuildParameters();
 
