@@ -5,7 +5,6 @@ import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
-import hudson.model.Describable;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
@@ -14,7 +13,7 @@ import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
-public class StashPostBuildComment extends Notifier implements Describable<Publisher> {
+public class StashPostBuildComment extends Notifier {
   private String buildSuccessfulComment;
   private String buildFailedComment;
 
