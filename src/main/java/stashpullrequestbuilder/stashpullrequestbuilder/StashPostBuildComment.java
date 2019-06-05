@@ -9,6 +9,7 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
+import javax.annotation.Nullable;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
@@ -63,8 +64,13 @@ public class StashPostBuildComment extends Notifier {
     }
 
     @Override
-    public StashPostBuildComment newInstance(StaplerRequest req, JSONObject formData)
+    public StashPostBuildComment newInstance(@Nullable StaplerRequest req, JSONObject formData)
         throws FormException {
+      if (req == null) {
+        // Should not happen according to the superclass documentation
+        throw new FormException("newInstance() called for null Stapler request", null);
+      }
+
       return req.bindJSON(StashPostBuildComment.class, formData);
     }
 
