@@ -137,6 +137,18 @@ These comments can contain environment variables that will be translated when po
 
 This feature can be used to post for instance a URL to the deployed application or code coverage at a successful build and why the build failed like what tests that did not pass.
 
+## Pipeline support
+
+Support for Jenkins pipelines is currently experimental. To enable it, go to *Manage Jenkins*, then *Configure System* and check for *Enable Pipeline Support*.
+
+The configuration is the same as for other projects, but it is not currently possible to customize the comments posted to the Bitbucket Server after the job completion.
+
+Stash Pull Request Builder Plugin could serve as a stepping stone to a more advanced setup using Bitbucket Branch Source Plugin. Unlike the later, this plugin supports inline Groovy scripts for pipeline configuration, which may be handy while figuring out the optimal configuration for the build. Once that configuration is established, it can be added to the sources as `Jenkinsfile`.
+
+Stash Pull Request Builder Plugin makes conversion to pipelines easier the users, as it behaves the same way as before, it just triggers a pipeline project instead of a freestyle project. This plugin works with pull requests only and relies on comments for deciding when and what to build. It would not scan the git repository for all branches and build them all. It will never build a branch before a pull request is created from it.
+
+To use Stash Pull Request Builder Plugin from Jenkinsfile, make sure to define it in properties. Otherwise, the trigger will be disabled after the the job runs. To find the exact syntax, open the Pipeline Syntax link and select "properties" as the Sample Step. Set up the trigger in the GUI and click on "Generate Pipeline Script".
+
 ## Copyright
 
 Copyright © 2015 Nathan McCarthy.

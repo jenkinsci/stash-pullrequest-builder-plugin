@@ -267,12 +267,27 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
     public static final String DEFAULT_CI_SKIP_PHRASES = "NO TEST";
     public static final String DEFAULT_CI_BUILD_PHRASES = "test this please";
 
+    private boolean enablePipelineSupport;
+
     public DescriptorImpl() {
       load();
     }
 
+    public boolean getEnablePipelineSupport() {
+      return enablePipelineSupport;
+    }
+
+    @DataBoundSetter
+    public void setEnablePipelineSupport(boolean enablePipelineSupport) {
+      this.enablePipelineSupport = enablePipelineSupport;
+    }
+
     @Override
     public boolean isApplicable(Item item) {
+      if (enablePipelineSupport) {
+        return item instanceof Job && item instanceof ParameterizedJob;
+      }
+
       return item instanceof AbstractProject;
     }
 
@@ -283,6 +298,9 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
 
     @Override
     public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
+      enablePipelineSupport = false;
+
+      req.bindJSON(this, json);
       save();
       return super.configure(req, json);
     }
