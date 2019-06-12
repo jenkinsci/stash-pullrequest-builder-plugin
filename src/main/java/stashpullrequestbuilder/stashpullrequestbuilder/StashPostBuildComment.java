@@ -9,9 +9,7 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
-import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.StaplerRequest;
 
 public class StashPostBuildComment extends Notifier {
   private String buildSuccessfulComment;
@@ -60,12 +58,6 @@ public class StashPostBuildComment extends Notifier {
 
     public DescriptorImpl() {
       super(StashPostBuildComment.class);
-    }
-
-    @Override
-    public StashPostBuildComment newInstance(StaplerRequest req, JSONObject formData)
-        throws FormException {
-      return req.bindJSON(StashPostBuildComment.class, formData);
     }
 
     @Override
