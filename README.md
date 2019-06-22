@@ -14,9 +14,10 @@ This plugin was inspired by the GitHub & BitBucket pull request builder plugins.
 - Jenkins 2.60.1 or higher.
 - [Git Plugin](https://wiki.jenkins-ci.org/display/JENKINS/Git+Plugin)
 
-## Parameter variables
+## Environment variables
 
-The plugin makes available to the job the following parameter variables:
+The plugin provides following environment variables to the build:
+
 - `${pullRequestId}`
 - `${pullRequestTitle}`
 - `${sourceBranch}`
@@ -27,6 +28,8 @@ The plugin makes available to the job the following parameter variables:
 - `${destinationRepositoryName}`
 - `${sourceCommitHash}`
 - `${destinationCommitHash}`
+
+If the project has a parameter with the name of one of those environment variables, the value of the parameter is replaced with the value of that environment variable.
 
 ## Creating a Job
 
@@ -109,9 +112,11 @@ If you want to rerun pull request test, write *"test this please"* comment to yo
 
 ## Adding additional parameters to a build
 
-If you want to add additional parameters to the triggered build, add comments using the pattern `p:<parameter_name>=<value>`, one at each line, prefixed with `p:`. If the same parameter name appears multiple times the latest comment with that parameter will decide the value.
+If you want to add additional parameters to the triggered build, add comments using the pattern `p:<parameter_name>=<value>`, one at each line, prefixed with `p:`. If the same parameter name appears multiple times, the latest comment with that parameter will set the value.
 
 For security reasons, all the parameters should also be defined in the project. Select **This project is parameterized** in the configuration and add string parameters with the names you want to be read from the comments. Parameters with names not defined in the project will be ignored.
+
+Parameters from the pull request comments are not allowed to override the environment variables provided by the plugin.
 
 **Example:**
 

@@ -220,14 +220,15 @@ public class StashRepository {
   private List<ParameterValue> getParameters(StashCause cause) {
     List<ParameterValue> values = new ArrayList<ParameterValue>();
 
-    Map<String, String> additionalParameters = cause.getAdditionalParameters();
-
     ParametersDefinitionProperty definitionProperty =
         this.job.getProperty(ParametersDefinitionProperty.class);
 
     if (definitionProperty == null) {
       return values;
     }
+
+    Map<String, String> additionalParameters = cause.getAdditionalParameters();
+    Map<String, String> environmentVariables = cause.getEnvironmentVariables();
 
     for (ParameterDefinition definition : definitionProperty.getParameterDefinitions()) {
       String parameterName = definition.getName();
@@ -238,6 +239,11 @@ public class StashRepository {
         if (additionalParameter != null) {
           parameterValue = new StringParameterValue(parameterName, additionalParameter);
         }
+      }
+
+      String environmentValue = environmentVariables.get(parameterName);
+      if (environmentValue != null) {
+        parameterValue = new StringParameterValue(parameterName, environmentValue);
       }
 
       if (parameterValue != null) {

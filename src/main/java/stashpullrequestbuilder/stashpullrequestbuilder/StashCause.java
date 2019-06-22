@@ -2,6 +2,7 @@ package stashpullrequestbuilder.stashpullrequestbuilder;
 
 import hudson.model.Cause;
 import java.util.Map;
+import java.util.TreeMap;
 
 /** Created by Nathan McCarthy */
 public class StashCause extends Cause {
@@ -19,6 +20,7 @@ public class StashCause extends Cause {
   private final String pullRequestVersion;
   private final String stashHost;
   private final Map<String, String> additionalParameters;
+  private final transient Map<String, String> environmentVariables;
 
   public StashCause(
       String stashHost,
@@ -49,6 +51,18 @@ public class StashCause extends Cause {
     this.pullRequestVersion = pullRequestVersion;
     this.stashHost = stashHost.replaceAll("/$", "");
     this.additionalParameters = additionalParameters;
+
+    environmentVariables = new TreeMap<>();
+    environmentVariables.put("sourceBranch", sourceBranch);
+    environmentVariables.put("targetBranch", targetBranch);
+    environmentVariables.put("sourceRepositoryOwner", sourceRepositoryOwner);
+    environmentVariables.put("sourceRepositoryName", sourceRepositoryName);
+    environmentVariables.put("pullRequestId", pullRequestId);
+    environmentVariables.put("destinationRepositoryOwner", destinationRepositoryOwner);
+    environmentVariables.put("destinationRepositoryName", destinationRepositoryName);
+    environmentVariables.put("pullRequestTitle", pullRequestTitle);
+    environmentVariables.put("sourceCommitHash", sourceCommitHash);
+    environmentVariables.put("destinationCommitHash", destinationCommitHash);
   }
 
   public String getSourceBranch() {
@@ -101,6 +115,10 @@ public class StashCause extends Cause {
 
   public Map<String, String> getAdditionalParameters() {
     return additionalParameters;
+  }
+
+  public Map<String, String> getEnvironmentVariables() {
+    return environmentVariables;
   }
 
   @Override

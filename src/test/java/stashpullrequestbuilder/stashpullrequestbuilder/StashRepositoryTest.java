@@ -447,6 +447,36 @@ public class StashRepositoryTest {
   }
 
   @Test
+  public void parameters_populated_from_StashCause() {
+    cause = makeCause(null);
+
+    ParameterDefinition parameterDefinition =
+        new StringParameterDefinition("sourceBranch", "DefaultBranch");
+    jobSetup(parameterDefinition);
+
+    List<ParameterValue> parameters = captureBuildParameters();
+
+    assertThat(
+        parameters, contains(new StringParameterValue("sourceBranch", cause.getSourceBranch())));
+  }
+
+  @Test
+  public void parameters_from_pull_request_comments_overridden_by_StashCause() {
+    Map<String, String> prParameters = new TreeMap<>();
+    prParameters.put("sourceBranch", "BranchFromPrComment");
+    cause = makeCause(prParameters);
+
+    ParameterDefinition parameterDefinition =
+        new StringParameterDefinition("sourceBranch", "DefaultBranch");
+    jobSetup(parameterDefinition);
+
+    List<ParameterValue> parameters = captureBuildParameters();
+
+    assertThat(
+        parameters, contains(new StringParameterValue("sourceBranch", cause.getSourceBranch())));
+  }
+
+  @Test
   public void getTargetPullRequests_returns_empty_if_getPullRequests_throws() throws Exception {
     when(stashApiClient.getPullRequests()).thenThrow(new StashApiException("cannot read PR list"));
 
