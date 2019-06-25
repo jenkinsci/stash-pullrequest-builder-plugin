@@ -67,10 +67,10 @@ public class StashRepository {
   private StashApiClient client;
 
   public StashRepository(@Nonnull Job<?, ?> job, @Nonnull StashBuildTrigger trigger) {
-    this(job, trigger, null);
+    this(job, trigger, makeStashApiClient(trigger));
   }
 
-  // For unit tests only
+  // Visible for unit tests
   StashRepository(
       @Nonnull Job<?, ?> job, @Nonnull StashBuildTrigger trigger, StashApiClient client) {
     this.job = job;
@@ -78,15 +78,14 @@ public class StashRepository {
     this.client = client;
   }
 
-  public void init() {
-    client =
-        new StashApiClient(
-            trigger.getStashHost(),
-            trigger.getUsername(),
-            trigger.getPassword(),
-            trigger.getProjectCode(),
-            trigger.getRepositoryName(),
-            trigger.isIgnoreSsl());
+  private static StashApiClient makeStashApiClient(StashBuildTrigger trigger) {
+    return new StashApiClient(
+        trigger.getStashHost(),
+        trigger.getUsername(),
+        trigger.getPassword(),
+        trigger.getProjectCode(),
+        trigger.getRepositoryName(),
+        trigger.isIgnoreSsl());
   }
 
   public Collection<StashPullRequestResponseValue> getTargetPullRequests() {
