@@ -54,6 +54,9 @@ import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashPullRequestRes
 @RunWith(MockitoJUnitRunner.class)
 public class StashRepositoryTest {
 
+  @Rule public JenkinsRule jenkinsRule = new JenkinsRule();
+  @Rule public MockitoRule rule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
+
   private StashRepository stashRepository;
 
   private StashCause cause;
@@ -67,9 +70,6 @@ public class StashRepositoryTest {
   @Mock private StashBuildTrigger trigger;
   @Mock private StashApiClient stashApiClient;
   @Mock private ParametersDefinitionProperty parametersDefinitionProperty;
-
-  @Rule public JenkinsRule jenkinsRule = new JenkinsRule();
-  @Rule public MockitoRule rule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
 
   @Before
   public void before() throws Exception {
