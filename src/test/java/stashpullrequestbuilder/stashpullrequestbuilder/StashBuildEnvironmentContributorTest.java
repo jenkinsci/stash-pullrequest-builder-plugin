@@ -75,7 +75,7 @@ public class StashBuildEnvironmentContributorTest {
   }
 
   @Test
-  public void populatesVariablesForRun() throws Exception {
+  public void variables_not_populated_for_run_with_StashCause() throws Exception {
     Run<?, ?> run = mock(Run.class);
     when(run.getCause(StashCause.class)).thenReturn(cause);
 
@@ -84,7 +84,7 @@ public class StashBuildEnvironmentContributorTest {
   }
 
   @Test
-  public void noVariablesForRunWithoutCause() throws Exception {
+  public void variables_not_populated_for_run_without_StashCause() throws Exception {
     Run<?, ?> run = mock(Run.class);
     when(run.getCause(StashCause.class)).thenReturn(null);
 
@@ -93,7 +93,7 @@ public class StashBuildEnvironmentContributorTest {
   }
 
   @Test
-  public void populatesVariablesForRootBuild() throws Exception {
+  public void variables_populated_for_root_build_that_has_StashCause() throws Exception {
     Build<?, ?> rootBuild = mock(Build.class);
 
     doReturn(rootBuild).when(rootBuild).getRootBuild();
@@ -104,7 +104,7 @@ public class StashBuildEnvironmentContributorTest {
   }
 
   @Test
-  public void populatesVariablesForChildBuild() throws Exception {
+  public void variables_populated_for_child_build_if_root_build_has_StashCause() throws Exception {
     Build<?, ?> childBuild = mock(Build.class);
     Build<?, ?> rootBuild = mock(Build.class);
 
@@ -116,7 +116,7 @@ public class StashBuildEnvironmentContributorTest {
   }
 
   @Test
-  public void noVariablesForJob() throws Exception {
+  public void variables_not_populated_for_Job() throws Exception {
     Job<?, ?> job = mock(Job.class);
 
     contributor.buildEnvironmentFor(job, envVars, listener);

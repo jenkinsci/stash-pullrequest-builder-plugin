@@ -128,14 +128,14 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsReturnsEmptyListForNoPullRequests() throws Exception {
+  public void getTargetPullRequests_returns_empty_list_for_no_pull_requests() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(Collections.emptyList());
 
     assertThat(stashRepository.getTargetPullRequests(), empty());
   }
 
   @Test
-  public void getTargetPullRequestsAcceptsOpenPullRequests() throws Exception {
+  public void getTargetPullRequests_accepts_open_pull_requests() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
 
@@ -143,7 +143,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsSkipsMergedPullRequests() throws Exception {
+  public void getTargetPullRequests_skips_merged_pull_requests() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     pullRequest.setState("MERGED");
 
@@ -151,7 +151,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsSkipsNullStatePullRequests() throws Exception {
+  public void getTargetPullRequests_skips_null_state_pull_requests() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     pullRequest.setState(null);
 
@@ -159,7 +159,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsAcceptsMatchingBranches() throws Exception {
+  public void getTargetPullRequests_accepts_matching_branches() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn("release/.*,feature/.*,testing/.*");
@@ -168,7 +168,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsAcceptsMatchingBranchesWithPadding() throws Exception {
+  public void getTargetPullRequests_accepts_matching_branches_with_padding() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild())
@@ -178,7 +178,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsSkipsMismatchingBranches() throws Exception {
+  public void getTargetPullRequests_skips_mismatching_branches() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn("release/.*,testing/.*");
@@ -187,7 +187,8 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsAcceptsAnyBranchIfBranchesToBuildIsEmpty() throws Exception {
+  public void getTargetPullRequests_accepts_any_branch_if_Branches_to_Build_is_empty()
+      throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn("");
@@ -196,7 +197,8 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsAcceptsAnyBranchIfBranchesToBuildIsNull() throws Exception {
+  public void getTargetPullRequests_accepts_any_branch_if_Branches_to_Build_is_null()
+      throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
     when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn(null);
@@ -205,7 +207,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsSkipsOnSkipPhraseInTitle() throws Exception {
+  public void getTargetPullRequests_skips_on_Skip_Phrase_in_title() throws Exception {
     pullRequest.setTitle("NO TEST");
 
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
@@ -215,7 +217,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsSkipsOnSkipPhraseInComments() throws Exception {
+  public void getTargetPullRequests_skips_on_Skip_Phrase_in_comments() throws Exception {
     StashPullRequestComment comment = new StashPullRequestComment();
     comment.setText("NO TEST");
     List<StashPullRequestComment> comments = Collections.singletonList(comment);
@@ -229,7 +231,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsPrioritizesLatestComments() throws Exception {
+  public void getTargetPullRequests_prioritizes_latest_comments() throws Exception {
     StashPullRequestComment comment1 = new StashPullRequestComment();
     comment1.setCommentId(1);
     comment1.setText("NO TEST");
@@ -250,7 +252,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsSkipPhraseIsCaseInsensitive() throws Exception {
+  public void getTargetPullRequests_ignores_Skip_Phrase_case() throws Exception {
     pullRequest.setTitle("Disable any testing");
 
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
@@ -260,7 +262,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsSkipPhraseMatchedAsSubstring() throws Exception {
+  public void getTargetPullRequests_matches_Skip_Phrase_as_substring() throws Exception {
     pullRequest.setTitle("This will get no testing whatsoever");
 
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
@@ -270,7 +272,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsSupportsMultipleSkipPhrasesAndPadding() throws Exception {
+  public void getTargetPullRequests_supports_multiple_Skip_Phrases_and_padding() throws Exception {
     pullRequest.setTitle("This will get no testing whatsoever");
 
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
@@ -280,7 +282,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsBuildsIfSkipPhraseIsEmpty() throws Exception {
+  public void getTargetPullRequests_builds_if_Skip_Phrase_is_empty() throws Exception {
     pullRequest.setTitle("NO TEST");
 
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
@@ -290,7 +292,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getTargetPullRequestsBuildsIfSkipPhraseIsNull() throws Exception {
+  public void getTargetPullRequests_builds_if_Skip_Phrase_is_null() throws Exception {
     pullRequest.setTitle("NO TEST");
 
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
@@ -300,7 +302,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getAdditionalParametersUsesNewestParameterDefinition() throws Exception {
+  public void getAdditionalParameters_uses_newest_parameter_definition() throws Exception {
     StashPullRequestComment comment1 = new StashPullRequestComment();
     comment1.setCommentId(1);
     comment1.setText("p:key=value1");
@@ -319,7 +321,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getAdditionalParametersUsesNewestParameterDefinitionRegardlessOfListOrder()
+  public void getAdditionalParameters_uses_newest_parameter_definition_regardless_of_list_order()
       throws Exception {
     StashPullRequestComment comment1 = new StashPullRequestComment();
     comment1.setCommentId(1);
@@ -339,7 +341,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void addFutureBuildTasksRemovesOldBuildFinishedCommentsIfEnabled() throws Exception {
+  public void addFutureBuildTasks_removes_old_BuildFinished_comments_if_enabled() throws Exception {
     StashPullRequestComment comment1 = new StashPullRequestComment();
     comment1.setCommentId(1);
     comment1.setText("[*BuildFinished* **MyProject**] DEADBEEF into 1BADFACE");
@@ -367,7 +369,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void startJobPassesParameterWithDefaultValue() {
+  public void startJob_passes_parameter_with_default_value() {
     cause = makeCause(null);
     ParameterDefinition parameterDefinition =
         new StringParameterDefinition("param1", "param1_default");
@@ -379,7 +381,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void startJobPassesParameterWithValueFromStashCause() {
+  public void startJob_passes_parameter_with_value_from_StashCause() {
     Map<String, String> prParameters = new TreeMap<>();
     prParameters.put("param1", "param1_value");
     cause = makeCause(prParameters);
@@ -394,7 +396,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void startJobIgnoresParameterWithMismatchingName() {
+  public void startJob_ignores_parameter_with_mismatching_name() {
     Map<String, String> prParameters = new TreeMap<>();
     prParameters.put("param2", "param2_value");
     cause = makeCause(prParameters);
@@ -409,7 +411,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void startJobReplacesValueOfNonStringParameter() {
+  public void startJob_replaces_value_of_nonstring_parameter() {
     Map<String, String> prParameters = new TreeMap<>();
     prParameters.put("param1", "param1_value");
     cause = makeCause(prParameters);
@@ -424,7 +426,7 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void startJobSkipsNullParameters() {
+  public void startJob_skips_null_parameters() {
     cause = makeCause(null);
 
     ParameterDefinition parameterDefinition = new FileParameterDefinition("param1", "parameter 1");
