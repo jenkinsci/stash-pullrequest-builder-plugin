@@ -2,6 +2,7 @@ package stashpullrequestbuilder.stashpullrequestbuilder.stash;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
@@ -60,15 +61,17 @@ public class AdditionalParameterRegExTest {
 
     Map<String, String> singleParameters =
         StashRepository.getParametersFromContent("p:param1=nothing");
-    assertThat(singleParameters, is(aMapWithSize(1)));
-    assertThat(singleParameters, hasEntry("param1", "nothing"));
+    assertThat(singleParameters, allOf(is(aMapWithSize(1)), hasEntry("param1", "nothing")));
 
     Map<String, String> multipleParameters =
         StashRepository.getParametersFromContent(
             "p:param1=nothing\rp:param2=something special\np:param3=\r\r\n\rjumping to conclusions\r\r\n\n");
-    assertThat(multipleParameters, is(aMapWithSize(3)));
-    assertThat(multipleParameters, hasEntry("param1", "nothing"));
-    assertThat(multipleParameters, hasEntry("param2", "something special"));
-    assertThat(multipleParameters, hasEntry("param3", ""));
+    assertThat(
+        multipleParameters,
+        allOf(
+            is(aMapWithSize(3)),
+            hasEntry("param1", "nothing"),
+            hasEntry("param2", "something special"),
+            hasEntry("param3", "")));
   }
 }
