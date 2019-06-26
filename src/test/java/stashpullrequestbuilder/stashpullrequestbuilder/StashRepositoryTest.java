@@ -6,8 +6,6 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.emptyArray;
 import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Mockito.any;
@@ -377,9 +375,7 @@ public class StashRepositoryTest {
 
     List<ParameterValue> parameters = captureBuildParameters();
 
-    assertThat(parameters, hasSize(1));
-    assertThat(parameters.get(0).getName(), is("param1"));
-    assertThat(parameters.get(0).getValue(), is("param1_default"));
+    assertThat(parameters, contains(new StringParameterValue("param1", "param1_default")));
   }
 
   @Test
@@ -394,9 +390,7 @@ public class StashRepositoryTest {
 
     List<ParameterValue> parameters = captureBuildParameters();
 
-    assertThat(parameters, hasSize(1));
-    assertThat(parameters.get(0).getName(), is("param1"));
-    assertThat(parameters.get(0).getValue(), is("param1_value"));
+    assertThat(parameters, contains(new StringParameterValue("param1", "param1_value")));
   }
 
   @Test
@@ -411,9 +405,7 @@ public class StashRepositoryTest {
 
     List<ParameterValue> parameters = captureBuildParameters();
 
-    assertThat(parameters, hasSize(1));
-    assertThat(parameters.get(0).getName(), is("param1"));
-    assertThat(parameters.get(0).getValue(), is("param1_default"));
+    assertThat(parameters, contains(new StringParameterValue("param1", "param1_default")));
   }
 
   @Test
@@ -428,10 +420,7 @@ public class StashRepositoryTest {
 
     List<ParameterValue> parameters = captureBuildParameters();
 
-    assertThat(parameters, hasSize(1));
-    assertThat(parameters.get(0), instanceOf(StringParameterValue.class));
-    assertThat(parameters.get(0).getName(), is("param1"));
-    assertThat(parameters.get(0).getValue(), is("param1_value"));
+    assertThat(parameters, contains(new StringParameterValue("param1", "param1_value")));
   }
 
   @Test
