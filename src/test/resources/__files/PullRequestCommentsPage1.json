@@ -1,0 +1,21 @@
+{
+  "isLastPage" : false,
+  "nextPageStart" : 4,
+  "values" : [
+    {
+      "comment" : {
+        "id" : 0,
+        "text" : "First comment"
+      }
+    },
+    {
+      "comment" : {}
+    },
+    {
+      "comment" : {}
+    },
+    {
+      "comment" : {}
+    }
+  ]
+}

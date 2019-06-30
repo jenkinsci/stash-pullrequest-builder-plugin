@@ -1,0 +1,17 @@
+{
+  "isLastPage" : true,
+  "values" : [
+    {
+      "comment" : {}
+    },
+    {
+      "comment" : {
+        "id" : 9,
+        "text" : "Last comment"
+      }
+    },
+    {
+      "broken_comment" : {}
+    }
+  ]
+}
