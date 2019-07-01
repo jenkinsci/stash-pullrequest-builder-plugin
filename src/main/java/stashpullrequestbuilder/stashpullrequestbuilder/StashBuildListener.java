@@ -8,6 +8,7 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.model.listeners.RunListener;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,7 +34,9 @@ public class StashBuildListener extends RunListener<Run<?, ?>> {
     try {
       run.setDescription(cause.getShortDescription());
     } catch (IOException e) {
-      logger.log(Level.SEVERE, "Can't update build description", e);
+      PrintStream buildLogger = listener.getLogger();
+      buildLogger.println("Can't update build description");
+      e.printStackTrace(buildLogger);
     }
   }
 
