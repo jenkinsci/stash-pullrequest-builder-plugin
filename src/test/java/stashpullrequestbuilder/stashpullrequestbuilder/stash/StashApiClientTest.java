@@ -41,8 +41,7 @@ import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient.Stas
 /*
  * Known issues:
  *
- * RuntimeException is thrown, but the callers may not be prepared for it, as it's not a checked exception
- * Many calls ignore HTTP errors, especially "malformed response"
+ * Some calls ignore HTTP errors, especially "malformed response"
  * deletePullRequestComment() gives no indication whether the call has succeeded
  * mergePullRequest() throws on 409 Conflict instead of returning false as apparently intended
  * There are no checks whether the HTTP code indicates an error for the specific request
@@ -148,8 +147,8 @@ public class StashApiClientTest {
   public void getPullRequests_throws_on_not_found() throws Exception {
     stubFor(any(anyUrl()).willReturn(notFound()));
 
-    expectedException.expect(RuntimeException.class);
-    expectedException.expectMessage(containsString("Didn't get a 200 response from Stash PR GET"));
+    expectedException.expect(StashApiException.class);
+    expectedException.expectMessage(containsString("Exception in GET request"));
     expectedException.expectCause(is(instanceOf(ExecutionException.class)));
 
     client.getPullRequests();
@@ -170,8 +169,8 @@ public class StashApiClientTest {
   public void getPullRequests_throws_on_connection_reset() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
 
-    expectedException.expect(RuntimeException.class);
-    expectedException.expectMessage(containsString("Connection reset"));
+    expectedException.expect(StashApiException.class);
+    expectedException.expectMessage(containsString("Exception in GET request"));
     expectedException.expectCause(is(instanceOf(ExecutionException.class)));
 
     client.getPullRequests();
@@ -211,8 +210,8 @@ public class StashApiClientTest {
     stubFor(any(anyUrl()).willReturn(notFound()));
 
     expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("cannot read comments for pull request"));
-    expectedException.expectCause(is(instanceOf(RuntimeException.class)));
+    expectedException.expectMessage(containsString("Exception in GET request"));
+    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
 
     client.getPullRequestComments(projectName, repositoryName, pullRequestId);
   }
@@ -233,8 +232,8 @@ public class StashApiClientTest {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
 
     expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("cannot read comments for pull request"));
-    expectedException.expectCause(is(instanceOf(RuntimeException.class)));
+    expectedException.expectMessage(containsString("Exception in GET request"));
+    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
 
     client.getPullRequestComments(projectName, repositoryName, pullRequestId);
   }
@@ -264,8 +263,8 @@ public class StashApiClientTest {
   public void deletePullRequestComment_throws_on_connection_reset() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
 
-    expectedException.expect(RuntimeException.class);
-    expectedException.expectMessage(containsString("Connection reset"));
+    expectedException.expect(StashApiException.class);
+    expectedException.expectMessage(containsString("Exception in DELETE request"));
     expectedException.expectCause(is(instanceOf(ExecutionException.class)));
 
     client.deletePullRequestComment(pullRequestId, commentId);
@@ -295,8 +294,8 @@ public class StashApiClientTest {
   public void postPullRequestComment_throws_on_no_content() throws Exception {
     stubFor(post(pullRequestPostCommentPath()).willReturn(noContent()));
 
-    expectedException.expect(RuntimeException.class);
-    expectedException.expectMessage(containsString("NullPointerException"));
+    expectedException.expect(StashApiException.class);
+    expectedException.expectMessage(containsString("Exception in POST request"));
     expectedException.expectCause(is(instanceOf(ExecutionException.class)));
 
     client.postPullRequestComment(pullRequestId, "Some comment");
@@ -306,16 +305,20 @@ public class StashApiClientTest {
   public void postPullRequestComment_throws_on_not_found() throws Exception {
     stubFor(any(anyUrl()).willReturn(notFound()));
 
-    expectedException.expect(RuntimeException.class);
-    expectedException.expectMessage(containsString("Didn't get a 200 response from Stash PR POST"));
+    expectedException.expect(StashApiException.class);
+    expectedException.expectMessage(containsString("Exception in POST request"));
     expectedException.expectCause(is(instanceOf(ExecutionException.class)));
 
     client.postPullRequestComment(pullRequestId, "Some comment");
   }
 
   @Test
-  public void postPullRequestComment_doesnt_throw_on_malformed_response() throws Exception {
+  public void postPullRequestComment_throws_on_malformed_response() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
+
+    expectedException.expect(StashApiException.class);
+    expectedException.expectMessage(containsString("Cannot parse reply after comment posting"));
+    expectedException.expectCause(is(instanceOf(JsonParseException.class)));
 
     client.postPullRequestComment(pullRequestId, "Some comment");
   }
@@ -324,8 +327,8 @@ public class StashApiClientTest {
   public void postPullRequestComment_throws_on_connection_reset() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
 
-    expectedException.expect(RuntimeException.class);
-    expectedException.expectMessage(containsString("Connection reset"));
+    expectedException.expect(StashApiException.class);
+    expectedException.expectMessage(containsString("Exception in POST request"));
     expectedException.expectCause(is(instanceOf(ExecutionException.class)));
 
     client.postPullRequestComment(pullRequestId, "Some comment");
@@ -347,16 +350,20 @@ public class StashApiClientTest {
   public void getPullRequestMergeStatus_throws_on_not_found() throws Exception {
     stubFor(any(anyUrl()).willReturn(notFound()));
 
-    expectedException.expect(RuntimeException.class);
-    expectedException.expectMessage(containsString("Didn't get a 200 response from Stash PR GET"));
+    expectedException.expect(StashApiException.class);
+    expectedException.expectMessage(containsString("Exception in GET request"));
     expectedException.expectCause(is(instanceOf(ExecutionException.class)));
 
     client.getPullRequestMergeStatus(pullRequestId);
   }
 
   @Test
-  public void getPullRequestMergeStatus_doesnt_throw_on_malformed_response() throws Exception {
+  public void getPullRequestMergeStatus_throws_on_malformed_response() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
+
+    expectedException.expect(StashApiException.class);
+    expectedException.expectMessage(containsString("Cannot parse merge status"));
+    expectedException.expectCause(is(instanceOf(JsonParseException.class)));
 
     client.getPullRequestMergeStatus(pullRequestId);
   }
@@ -365,8 +372,8 @@ public class StashApiClientTest {
   public void getPullRequestMergeStatus_throws_on_connection_reset() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
 
-    expectedException.expect(RuntimeException.class);
-    expectedException.expectMessage(containsString("Connection reset"));
+    expectedException.expect(StashApiException.class);
+    expectedException.expectMessage(containsString("Exception in GET request"));
     expectedException.expectCause(is(instanceOf(ExecutionException.class)));
 
     client.getPullRequestMergeStatus(pullRequestId);
@@ -391,8 +398,8 @@ public class StashApiClientTest {
   public void mergePullRequest_throws_on_empty_response() throws Exception {
     stubFor(post(pullRequestMergePath(mergeVersion)).willReturn(noContent()));
 
-    expectedException.expect(RuntimeException.class);
-    expectedException.expectMessage(containsString("NullPointerException"));
+    expectedException.expect(StashApiException.class);
+    expectedException.expectMessage(containsString("Exception in POST request"));
     expectedException.expectCause(is(instanceOf(ExecutionException.class)));
 
     assertThat(client.mergePullRequest(pullRequestId, mergeVersion), is(true));
@@ -402,8 +409,8 @@ public class StashApiClientTest {
   public void mergePullRequest_throws_on_conflict() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withStatus(409)));
 
-    expectedException.expect(RuntimeException.class);
-    expectedException.expectMessage(containsString("Didn't get a 200 response from Stash PR POST"));
+    expectedException.expect(StashApiException.class);
+    expectedException.expectMessage(containsString("Exception in POST request"));
     expectedException.expectCause(is(instanceOf(ExecutionException.class)));
 
     client.mergePullRequest(pullRequestId, mergeVersion);
@@ -413,8 +420,8 @@ public class StashApiClientTest {
   public void mergePullRequest_throws_on_not_found() throws Exception {
     stubFor(any(anyUrl()).willReturn(notFound()));
 
-    expectedException.expect(RuntimeException.class);
-    expectedException.expectMessage(containsString("Didn't get a 200 response from Stash PR POST"));
+    expectedException.expect(StashApiException.class);
+    expectedException.expectMessage(containsString("Exception in POST request"));
     expectedException.expectCause(is(instanceOf(ExecutionException.class)));
 
     client.mergePullRequest(pullRequestId, mergeVersion);
@@ -431,8 +438,8 @@ public class StashApiClientTest {
   public void mergePullRequest_throws_on_connection_reset() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
 
-    expectedException.expect(RuntimeException.class);
-    expectedException.expectMessage(containsString("Connection reset"));
+    expectedException.expect(StashApiException.class);
+    expectedException.expectMessage(containsString("Exception in POST request"));
     expectedException.expectCause(is(instanceOf(ExecutionException.class)));
 
     client.mergePullRequest(pullRequestId, mergeVersion);

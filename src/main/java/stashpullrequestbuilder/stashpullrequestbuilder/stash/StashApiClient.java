@@ -11,10 +11,13 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -30,6 +33,7 @@ import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpClientError;
+import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
@@ -142,7 +146,7 @@ public class StashApiClient {
         commentResponses.add(resp);
       }
       return extractComments(commentResponses);
-    } catch (Exception e) {
+    } catch (IOException e) {
       throw new StashApiException(
           format(
               "%s/%s: cannot read comments for pull request %s",
@@ -151,38 +155,37 @@ public class StashApiClient {
     }
   }
 
-  public void deletePullRequestComment(String pullRequestId, String commentId) {
+  public void deletePullRequestComment(String pullRequestId, String commentId)
+      throws StashApiException {
     String path = pullRequestPath(pullRequestId) + "/comments/" + commentId + "?version=0";
     deleteRequest(path);
   }
 
   @Nullable
-  public StashPullRequestComment postPullRequestComment(String pullRequestId, String comment) {
+  public StashPullRequestComment postPullRequestComment(String pullRequestId, String comment)
+      throws StashApiException {
     String path = pullRequestPath(pullRequestId) + "/comments";
+    String response = postRequest(path, comment);
     try {
-      String response = postRequest(path, comment);
       return parseSingleCommentJson(response);
-
     } catch (IOException e) {
-      logger.log(Level.SEVERE, "Failed to post Stash PR comment " + path + " " + e);
+      throw new StashApiException("Cannot parse reply after comment posting", e);
     }
-    return null;
   }
 
   @Nullable
-  public StashPullRequestMergeableResponse getPullRequestMergeStatus(String pullRequestId) {
+  public StashPullRequestMergeableResponse getPullRequestMergeStatus(String pullRequestId)
+      throws StashApiException {
     String path = pullRequestPath(pullRequestId) + "/merge";
+    String response = getRequest(path);
     try {
-      String response = getRequest(path);
       return parsePullRequestMergeStatus(response);
-
     } catch (IOException e) {
-      logger.log(Level.WARNING, "Failed to get Stash PR Merge Status " + path + " " + e);
+      throw new StashApiException("Cannot parse merge status", e);
     }
-    return null;
   }
 
-  public boolean mergePullRequest(String pullRequestId, String version) {
+  public boolean mergePullRequest(String pullRequestId, String version) throws StashApiException {
     String path = pullRequestPath(pullRequestId) + "/merge?version=" + version;
     String response = postRequest(path, null);
     return !response.equals(Integer.toString(HttpStatus.SC_CONFLICT));
@@ -213,7 +216,7 @@ public class StashApiClient {
     return client;
   }
 
-  private String getRequest(String path) {
+  private String getRequest(String path) throws StashApiException {
     logger.log(Level.FINEST, "PR-GET-REQUEST:" + path);
     HttpClient client = getHttpClient();
     client.getState().setCredentials(AuthScope.ANY, credentials);
@@ -240,7 +243,7 @@ public class StashApiClient {
                 private GetMethod request;
 
                 @Override
-                public String call() throws Exception {
+                public String call() throws StashApiException, IOException {
                   String response = null;
                   int responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
                   responseCode = client.executeMethod(request);
@@ -248,7 +251,7 @@ public class StashApiClient {
                     logger.log(
                         Level.SEVERE,
                         "Failing to get response from Stash PR GET" + request.getPath());
-                    throw new RuntimeException(
+                    throw new StashApiException(
                         "Didn't get a 200 response from Stash PR GET! Response; '"
                             + HttpStatus.getStatusText(responseCode)
                             + "' with message; "
@@ -273,12 +276,10 @@ public class StashApiClient {
       response = httpTask.get(HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
     } catch (TimeoutException e) {
-      e.printStackTrace();
       request.abort();
-      throw new RuntimeException(e);
-    } catch (Exception e) {
-      e.printStackTrace();
-      throw new RuntimeException(e);
+      throw new StashApiException("Timeout in GET request", e);
+    } catch (InterruptedException | ExecutionException e) {
+      throw new StashApiException("Exception in GET request", e);
     } finally {
       request.releaseConnection();
     }
@@ -286,7 +287,7 @@ public class StashApiClient {
     return response;
   }
 
-  public void deleteRequest(String path) {
+  public void deleteRequest(String path) throws StashApiException {
     HttpClient client = getHttpClient();
     client.getState().setCredentials(AuthScope.ANY, credentials);
 
@@ -313,7 +314,7 @@ public class StashApiClient {
                 private DeleteMethod request;
 
                 @Override
-                public Integer call() throws Exception {
+                public Integer call() throws StashApiException, HttpException, IOException {
                   int response = -1;
                   response = client.executeMethod(request);
                   return response;
@@ -330,12 +331,10 @@ public class StashApiClient {
       response = httpTask.get(HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
     } catch (TimeoutException e) {
-      e.printStackTrace();
       request.abort();
-      throw new RuntimeException(e);
-    } catch (Exception e) {
-      e.printStackTrace();
-      throw new RuntimeException(e);
+      throw new StashApiException("Timeout in DELETE request", e);
+    } catch (ExecutionException | InterruptedException e) {
+      throw new StashApiException("Exception in DELETE request", e);
     } finally {
       request.releaseConnection();
     }
@@ -343,7 +342,7 @@ public class StashApiClient {
     logger.log(Level.FINE, "Delete comment {" + path + "} returned result code; " + response);
   }
 
-  private String postRequest(String path, String comment) {
+  private String postRequest(String path, String comment) throws StashApiException {
     logger.log(Level.FINEST, "PR-POST-REQUEST:" + path + " with: " + comment);
     HttpClient client = getHttpClient();
     client.getState().setCredentials(AuthScope.ANY, credentials);
@@ -364,7 +363,7 @@ public class StashApiClient {
         requestEntity =
             new StringRequestEntity(mapper.writeValueAsString(node), "application/json", "UTF-8");
       } catch (IOException e) {
-        e.printStackTrace();
+        throw new StashApiException("Exception preparing POST request", e);
       }
       request.setRequestEntity(requestEntity);
     }
@@ -386,7 +385,7 @@ public class StashApiClient {
                 private PostMethod request;
 
                 @Override
-                public String call() throws Exception {
+                public String call() throws StashApiException, HttpException, IOException {
                   String response = "";
                   int responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
 
@@ -395,7 +394,7 @@ public class StashApiClient {
                     logger.log(
                         Level.SEVERE,
                         "Failing to get response from Stash PR POST" + request.getPath());
-                    throw new RuntimeException(
+                    throw new StashApiException(
                         "Didn't get a 200 response from Stash PR POST! Response; '"
                             + HttpStatus.getStatusText(responseCode)
                             + "' with message; "
@@ -421,12 +420,10 @@ public class StashApiClient {
       response = httpTask.get(HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
     } catch (TimeoutException e) {
-      e.printStackTrace();
       request.abort();
-      throw new RuntimeException(e);
-    } catch (Exception e) {
-      e.printStackTrace();
-      throw new RuntimeException(e);
+      throw new StashApiException("Timeout in POST request", e);
+    } catch (ExecutionException | InterruptedException e) {
+      throw new StashApiException("Exception in POST request", e);
     } finally {
       request.releaseConnection();
     }
@@ -520,7 +517,7 @@ public class StashApiClient {
         SSLContext context = SSLContext.getInstance("SSL");
         context.init(null, trustAllCerts, null);
         return context;
-      } catch (Exception e) {
+      } catch (KeyManagementException | NoSuchAlgorithmException e) {
         LOG.error(e.getMessage(), e);
         throw new HttpClientError(e.toString());
       }

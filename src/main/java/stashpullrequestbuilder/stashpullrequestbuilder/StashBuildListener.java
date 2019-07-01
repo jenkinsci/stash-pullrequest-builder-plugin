@@ -1,5 +1,7 @@
 package stashpullrequestbuilder.stashpullrequestbuilder;
 
+import static java.lang.String.format;
+
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.AbstractBuild;
@@ -10,11 +12,11 @@ import hudson.model.listeners.RunListener;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import jenkins.model.JenkinsLocationConfiguration;
 import jenkins.model.ParameterizedJobMixIn;
+import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient.StashApiException;
 
 /** Created by Nathan McCarthy */
 @Extension
@@ -42,6 +44,8 @@ public class StashBuildListener extends RunListener<Run<?, ?>> {
 
   @Override
   public void onCompleted(Run<?, ?> run, @Nonnull TaskListener listener) {
+    PrintStream buildLogger = listener.getLogger();
+
     StashCause cause = run.getCause(StashCause.class);
     if (cause == null) {
       return;
@@ -65,7 +69,19 @@ public class StashBuildListener extends RunListener<Run<?, ?>> {
     } else {
       buildUrl = rootUrl + run.getUrl();
     }
-    repository.deletePullRequestComment(cause.getPullRequestId(), cause.getBuildStartCommentId());
+
+    // Delete the "Build Started" comment, as it gets replaced with a comment
+    // about the build result. Failure to delete the comment is not fatal, it's
+    // reported to the build log.
+    try {
+      repository.deletePullRequestComment(cause.getPullRequestId(), cause.getBuildStartCommentId());
+    } catch (StashApiException e) {
+      buildLogger.println(
+          format(
+              "%s: cannot delete Build Start comment for pull request %s",
+              run.getParent().getDisplayName(), cause.getPullRequestId()));
+      e.printStackTrace(buildLogger);
+    }
 
     String additionalComment = "";
     StashPostBuildComment comments = null;
@@ -103,31 +119,30 @@ public class StashBuildListener extends RunListener<Run<?, ?>> {
         additionalComment,
         duration);
 
-    // Merge PR
+    // Request the server to merge the pull request on success if that option is
+    // enabled. Log the result to the build log. Handle exceptions here, report
+    // them to the build log as well.
     if (trigger.getMergeOnSuccess() && run.getResult() == Result.SUCCESS) {
-      boolean mergeStat =
-          repository.mergePullRequest(cause.getPullRequestId(), cause.getPullRequestVersion());
-      if (mergeStat == true) {
-        String logmsg =
-            "Merged pull request "
-                + cause.getPullRequestId()
-                + "("
-                + cause.getSourceBranch()
-                + ") to branch "
-                + cause.getTargetBranch();
-        logger.log(Level.INFO, logmsg);
-        listener.getLogger().println(logmsg);
-      } else {
-        String logmsg =
-            "Failed to merge pull request "
-                + cause.getPullRequestId()
-                + "("
-                + cause.getSourceBranch()
-                + ") to branch "
-                + cause.getTargetBranch()
-                + " because it's out of date";
-        logger.log(Level.INFO, logmsg);
-        listener.getLogger().println(logmsg);
+      try {
+        boolean mergeStat =
+            repository.mergePullRequest(cause.getPullRequestId(), cause.getPullRequestVersion());
+        if (mergeStat == true) {
+          buildLogger.println(
+              format(
+                  "Successfully merged pull request %s (%s) to branch %s",
+                  cause.getPullRequestId(), cause.getSourceBranch(), cause.getTargetBranch()));
+        } else {
+          buildLogger.println(
+              format(
+                  "Failed to merge pull request %s (%s) to branch %s, it may be out of date",
+                  cause.getPullRequestId(), cause.getSourceBranch(), cause.getTargetBranch()));
+        }
+      } catch (StashApiException e) {
+        buildLogger.println(
+            format(
+                "Failed to merge pull request %s (%s) to branch %s",
+                cause.getPullRequestId(), cause.getSourceBranch(), cause.getTargetBranch()));
+        e.printStackTrace(buildLogger);
       }
     }
   }

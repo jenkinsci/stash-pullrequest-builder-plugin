@@ -38,6 +38,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
 import org.mockito.quality.Strictness;
+import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient.StashApiException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StashBuildListenerTest {
@@ -80,6 +81,26 @@ public class StashBuildListenerTest {
             null);
   }
 
+  private StashRepository setup_onCompleted(boolean mergeOnSuccess) throws Exception {
+    StashBuildTrigger trigger = mock(StashBuildTrigger.class);
+    StashPullRequestsBuilder builder = mock(StashPullRequestsBuilder.class);
+    StashRepository repository = mock(StashRepository.class);
+    FreeStyleProject project = spy(jenkinsRule.createFreeStyleProject("TestProject"));
+
+    Map<TriggerDescriptor, Trigger<?>> triggerMap = new HashMap<TriggerDescriptor, Trigger<?>>();
+    triggerMap.put(StashBuildTrigger.descriptor, trigger);
+
+    when(build.getCause(eq(StashCause.class))).thenReturn(stashCause);
+    when(build.getParent()).thenReturn(project);
+    when(project.getTriggers()).thenReturn(triggerMap);
+    when(trigger.getBuilder()).thenReturn(builder);
+    when(builder.getRepository()).thenReturn(repository);
+    when(build.getResult()).thenReturn(Result.SUCCESS);
+    when(trigger.getMergeOnSuccess()).thenReturn(mergeOnSuccess);
+
+    return repository;
+  }
+
   @Test
   public void onStarted_sets_description() throws Exception {
     when(build.getCause(eq(StashCause.class))).thenReturn(stashCause);
@@ -107,7 +128,7 @@ public class StashBuildListenerTest {
 
     String buildLog = new String(buildLogBuffer.toByteArray(), StandardCharsets.UTF_8);
     String[] buildLogLines = buildLog.split("\\r?\\n|\\r");
-    assertThat(buildLogLines.length, greaterThanOrEqualTo(3));
+    assertThat(buildLogLines.length, is(greaterThanOrEqualTo(3)));
     assertThat(buildLogLines[0], is("Can't update build description"));
     assertThat(buildLogLines[1], is("java.io.IOException: Bad Description"));
     for (int i = 2; i < buildLogLines.length; i++) {
@@ -119,21 +140,8 @@ public class StashBuildListenerTest {
   public void onCompleted_posts_finished_comment() throws Exception {
     final String duration = "2 seconds";
     final int buildNumber = 123;
+    StashRepository repository = setup_onCompleted(false);
 
-    StashBuildTrigger trigger = mock(StashBuildTrigger.class);
-    StashPullRequestsBuilder builder = mock(StashPullRequestsBuilder.class);
-    StashRepository repository = mock(StashRepository.class);
-    FreeStyleProject project = spy(jenkinsRule.createFreeStyleProject());
-
-    Map<TriggerDescriptor, Trigger<?>> triggerMap = new HashMap<TriggerDescriptor, Trigger<?>>();
-    triggerMap.put(StashBuildTrigger.descriptor, trigger);
-
-    when(build.getCause(eq(StashCause.class))).thenReturn(stashCause);
-    when(build.getParent()).thenReturn(project);
-    when(project.getTriggers()).thenReturn(triggerMap);
-    when(trigger.getBuilder()).thenReturn(builder);
-    when(builder.getRepository()).thenReturn(repository);
-    when(build.getResult()).thenReturn(Result.SUCCESS);
     when(build.getDurationString()).thenReturn(duration);
     when(build.getNumber()).thenReturn(buildNumber);
 
@@ -149,6 +157,91 @@ public class StashBuildListenerTest {
             eq(buildNumber),
             eq(""),
             eq(duration));
+  }
+
+  @Test
+  public void onCompleted_writes_to_build_log_if_cannot_post_finished_comment() throws Exception {
+    StashRepository repository = setup_onCompleted(false);
+
+    doThrow(new StashApiException("Cannot Delete"))
+        .when(repository)
+        .deletePullRequestComment(
+            eq(stashCause.getPullRequestId()), eq(stashCause.getBuildStartCommentId()));
+
+    stashBuildListener.onCompleted(build, taskListener);
+
+    String buildLog = new String(buildLogBuffer.toByteArray(), StandardCharsets.UTF_8);
+    String[] buildLogLines = buildLog.split("\\r?\\n|\\r");
+    assertThat(buildLogLines.length, is(greaterThanOrEqualTo(3)));
+    assertThat(
+        buildLogLines[0],
+        is("TestProject: cannot delete Build Start comment for pull request PullRequestId"));
+    assertThat(
+        buildLogLines[1],
+        is(
+            "stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient$StashApiException: Cannot Delete"));
+    for (int i = 2; i < buildLogLines.length; i++) {
+      assertThat(buildLogLines[i], matchesPattern("^\\tat [A-Za-z0-9_$.]+\\(.*\\)$"));
+    }
+  }
+
+  @Test
+  public void onCompleted_writes_to_build_log_on_merge_success() throws Exception {
+    StashRepository repository = setup_onCompleted(true);
+    when(repository.mergePullRequest(
+            eq(stashCause.getPullRequestId()), eq(stashCause.getPullRequestVersion())))
+        .thenReturn(true);
+
+    stashBuildListener.onCompleted(build, taskListener);
+
+    String buildLog = new String(buildLogBuffer.toByteArray(), StandardCharsets.UTF_8);
+    String[] buildLogLines = buildLog.split("\\r?\\n|\\r");
+    assertThat(buildLogLines.length, is(1));
+    assertThat(
+        buildLogLines[0],
+        is("Successfully merged pull request PullRequestId (SourceBranch) to branch TargetBranch"));
+  }
+
+  @Test
+  public void onCompleted_writes_to_build_log_on_merge_failure() throws Exception {
+    StashRepository repository = setup_onCompleted(true);
+    when(repository.mergePullRequest(
+            eq(stashCause.getPullRequestId()), eq(stashCause.getPullRequestVersion())))
+        .thenReturn(false);
+
+    stashBuildListener.onCompleted(build, taskListener);
+
+    String buildLog = new String(buildLogBuffer.toByteArray(), StandardCharsets.UTF_8);
+    String[] buildLogLines = buildLog.split("\\r?\\n|\\r");
+    assertThat(buildLogLines.length, is(1));
+    assertThat(
+        buildLogLines[0],
+        is(
+            "Failed to merge pull request PullRequestId (SourceBranch) to branch TargetBranch, it may be out of date"));
+  }
+
+  @Test
+  public void onCompleted_writes_to_build_log_if_merge_throws() throws Exception {
+    StashRepository repository = setup_onCompleted(true);
+    when(repository.mergePullRequest(
+            eq(stashCause.getPullRequestId()), eq(stashCause.getPullRequestVersion())))
+        .thenThrow(new StashApiException("Merge Failure"));
+
+    stashBuildListener.onCompleted(build, taskListener);
+
+    String buildLog = new String(buildLogBuffer.toByteArray(), StandardCharsets.UTF_8);
+    String[] buildLogLines = buildLog.split("\\r?\\n|\\r");
+    assertThat(buildLogLines.length, greaterThanOrEqualTo(3));
+    assertThat(
+        buildLogLines[0],
+        is("Failed to merge pull request PullRequestId (SourceBranch) to branch TargetBranch"));
+    assertThat(
+        buildLogLines[1],
+        is(
+            "stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient$StashApiException: Merge Failure"));
+    for (int i = 2; i < buildLogLines.length; i++) {
+      assertThat(buildLogLines[i], matchesPattern("^\\tat [A-Za-z0-9_$.]+\\(.*\\)$"));
+    }
   }
 
   @Test

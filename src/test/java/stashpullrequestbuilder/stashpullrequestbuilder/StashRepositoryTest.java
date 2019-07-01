@@ -10,6 +10,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
 import static java.lang.String.format;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
+import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.emptyArray;
@@ -17,6 +18,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -312,6 +314,16 @@ public class StashRepositoryTest {
   }
 
   @Test
+  public void getTargetPullRequests_skips_if_getPullRequestMergeStatus_throws() throws Exception {
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
+    when(trigger.getCheckProbeMergeStatus()).thenReturn(true);
+    when(stashApiClient.getPullRequestMergeStatus(pullRequest.getId()))
+        .thenThrow(new StashApiException("Unknown Status"));
+
+    assertThat(stashRepository.getTargetPullRequests(), is(empty()));
+  }
+
+  @Test
   public void getAdditionalParameters_uses_newest_parameter_definition() throws Exception {
     StashPullRequestComment comment1 = new StashPullRequestComment();
     comment1.setCommentId(1);
@@ -376,6 +388,43 @@ public class StashRepositoryTest {
 
     verify(stashApiClient, times(1)).deletePullRequestComment(eq("123"), eq("1"));
     verify(stashApiClient, times(0)).deletePullRequestComment(eq("123"), eq("2"));
+  }
+
+  @Test
+  public void addFutureBuildTasks_schedules_build_if_deletePullRequestComment_throws()
+      throws Exception {
+    StashPullRequestComment comment = new StashPullRequestComment();
+    comment.setCommentId(1);
+    comment.setText("[*BuildFinished* **MyProject**] DEF2 into DEF1");
+    List<StashPullRequestComment> comments = Arrays.asList(comment);
+
+    StashPullRequestComment response = new StashPullRequestComment();
+    response.setCommentId(2);
+
+    when(stashApiClient.getPullRequestComments(any(), any(), any())).thenReturn(comments);
+    when(stashApiClient.postPullRequestComment(any(), any())).thenReturn(response);
+
+    when(trigger.getDeletePreviousBuildFinishComments()).thenReturn(true);
+    when(trigger.getStashHost()).thenReturn("http://localhost/");
+    when(project.getDisplayName()).thenReturn("MyProject");
+    doThrow(new StashApiException("Cannot Delete"))
+        .when(stashApiClient)
+        .deletePullRequestComment(any(), any());
+
+    stashRepository.addFutureBuildTasks(pullRequestList);
+
+    assertThat(Jenkins.getInstance().getQueue().getItems(), is(arrayWithSize(1)));
+  }
+
+  @Test
+  public void addFutureBuildTasks_doesnt_schedule_build_if_postPullRequestComment_throws()
+      throws Exception {
+    when(stashApiClient.postPullRequestComment(any(), any()))
+        .thenThrow(new StashApiException("Cannot Post"));
+
+    stashRepository.addFutureBuildTasks(pullRequestList);
+
+    assertThat(Jenkins.getInstance().getQueue().getItems(), is(emptyArray()));
   }
 
   @Test

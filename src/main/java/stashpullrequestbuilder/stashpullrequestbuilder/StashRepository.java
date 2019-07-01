@@ -94,6 +94,9 @@ public class StashRepository {
     List<StashPullRequestResponseValue> targetPullRequests =
         new ArrayList<StashPullRequestResponseValue>();
 
+    // Fetch "OPEN" pull requests from the server. Failure to get the list will
+    // prevent builds from being scheduled. However, the call will be retried
+    // during the next cycle, as determined by the cron settings.
     List<StashPullRequestResponseValue> pullRequests;
     try {
       pullRequests = client.getPullRequests();
@@ -110,7 +113,15 @@ public class StashRepository {
     return targetPullRequests;
   }
 
-  public String postBuildStartCommentTo(StashPullRequestResponseValue pullRequest) {
+  /**
+   * Post "BuildStarted" comment to Bitbucket Server
+   *
+   * @param pullRequest pull request
+   * @return comment ID
+   * @throws StashApiException if posting the comment fails
+   */
+  public String postBuildStartCommentTo(StashPullRequestResponseValue pullRequest)
+      throws StashApiException {
     String sourceCommit = pullRequest.getFromRef().getLatestCommit();
     String destinationCommit = pullRequest.getToRef().getLatestCommit();
     String comment =
@@ -269,6 +280,9 @@ public class StashRepository {
     for (StashPullRequestResponseValue pullRequest : pullRequests) {
       Map<String, String> additionalParameters;
 
+      // Get parameter values for the build from the pull request comments.
+      // Failure to do so causes the build to be skipped, as we would not run
+      // the build with incorrect parameters.
       try {
         additionalParameters = getAdditionalParameters(pullRequest);
       } catch (StashApiException e) {
@@ -281,6 +295,8 @@ public class StashRepository {
         continue;
       }
 
+      // Delete comments about previous build results, if that option is
+      // enabled. Run the build even if those comments cannot be deleted.
       if (trigger.getDeletePreviousBuildFinishComments()) {
         try {
           deletePreviousBuildFinishedComments(pullRequest);
@@ -294,7 +310,25 @@ public class StashRepository {
         }
       }
 
-      String commentId = postBuildStartCommentTo(pullRequest);
+      // Post a comment indicating the build start. Strictly speaking, we are
+      // just adding the build to the queue, it will start after the quiet time
+      // expires and there are executors available. Failure to post the comment
+      // prevents the build for safety reasons. If the plugin cannot post this
+      // comment, chances are it won't be able to post the build results, which
+      // would trigger the build again and again, wasting Jenkins resources.
+      String commentId;
+      try {
+        commentId = postBuildStartCommentTo(pullRequest);
+      } catch (StashApiException e) {
+        logger.log(
+            Level.INFO,
+            format(
+                "%s: cannot post Build Start comment for pull request %s, not building",
+                job.getName(), pullRequest.getId()),
+            e);
+        continue;
+      }
+
       StashCause cause =
           new StashCause(
               trigger.getStashHost(),
@@ -315,7 +349,15 @@ public class StashRepository {
     }
   }
 
-  public void deletePullRequestComment(String pullRequestId, String commentId) {
+  /**
+   * Deletes pull request comment from Bitbucket Server
+   *
+   * @param pullRequestId pull request ID
+   * @param commentId comment to be deleted
+   * @throws StashApiException if deleting the comment fails
+   */
+  public void deletePullRequestComment(String pullRequestId, String commentId)
+      throws StashApiException {
     this.client.deletePullRequestComment(pullRequestId, commentId);
   }
 
@@ -359,14 +401,41 @@ public class StashRepository {
 
     comment = comment.concat(additionalComment);
 
-    this.client.postPullRequestComment(pullRequestId, comment);
+    // Post the "Build Finished" comment. Failure to post it can lead to
+    // scheduling another build for the pull request unnecessarily.
+    try {
+      this.client.postPullRequestComment(pullRequestId, comment);
+    } catch (StashApiException e) {
+      logger.log(
+          Level.WARNING,
+          format(
+              "%s: cannot post Build Finished comment for pull request %s",
+              job.getDisplayName(), pullRequestId),
+          e);
+    }
   }
 
-  public boolean mergePullRequest(String pullRequestId, String version) {
+  /**
+   * Instructs Bitbucket Server to merge pull request
+   *
+   * @param pullRequestId pull request ID
+   * @param version pull request version
+   * @return true if the merge succeeds, false if the server reports an error
+   * @throws StashApiException if cannot communicate to the server
+   */
+  public boolean mergePullRequest(String pullRequestId, String version) throws StashApiException {
     return this.client.mergePullRequest(pullRequestId, version);
   }
 
-  private boolean isPullRequestMergeable(StashPullRequestResponseValue pullRequest) {
+  /**
+   * Inquiries Bitbucket Server whether the pull request can be merged
+   *
+   * @param pullRequest pull request
+   * @return true if the merge is allowed, false otherwise
+   * @throws StashApiException if cannot communicate to the server
+   */
+  private boolean isPullRequestMergeable(StashPullRequestResponseValue pullRequest)
+      throws StashApiException {
     if (trigger.getCheckMergeable()
         || trigger.getCheckNotConflicted()
         || trigger.getCheckProbeMergeStatus()) {
@@ -454,8 +523,21 @@ public class StashRepository {
       return false;
     }
 
-    if (!isPullRequestMergeable(pullRequest)) {
-      logger.info("Skipping PR: " + pullRequest.getId() + " as cannot be merged");
+    // Check whether the pull request can be merged and whether it's in the
+    // "conflicted" state. If that information cannot be retrieved, don't build
+    // the pull request in this cycle.
+    try {
+      if (!isPullRequestMergeable(pullRequest)) {
+        logger.info("Skipping PR: " + pullRequest.getId() + " as cannot be merged");
+        return false;
+      }
+    } catch (StashApiException e) {
+      logger.log(
+          Level.INFO,
+          format(
+              "%s: cannot determine if pull request %s can be merged, skipping",
+              job.getDisplayName(), pullRequest.getId()),
+          e);
       return false;
     }
 
@@ -473,6 +555,10 @@ public class StashRepository {
     String destinationCommit = destination.getLatestCommit();
 
     String id = pullRequest.getId();
+
+    // Fetch all comments for the pull request. If it fails, don't build the
+    // pull request in this cycle, as it cannot be determined if it should be
+    // built without checking the comments.
     List<StashPullRequestComment> comments;
     try {
       comments = client.getPullRequestComments(owner, repositoryName, id);
