@@ -1,10 +1,11 @@
 package stashpullrequestbuilder.stashpullrequestbuilder.stash;
 
+import static java.lang.String.format;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.lang.invoke.MethodHandles;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -12,7 +13,6 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -20,6 +20,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
@@ -50,9 +52,16 @@ import org.codehaus.jackson.node.ObjectNode;
 @SuppressFBWarnings("EQ_DOESNT_OVERRIDE_EQUALS")
 public class StashApiClient {
 
+  // Request timeout: maximum time between sending an HTTP request and receiving
+  // a response to it from the server.
   private static final int HTTP_REQUEST_TIMEOUT_SECONDS = 60;
+
+  // Connection timeout: maximum time for connecting to the HTTP server.
   private static final int HTTP_CONNECTION_TIMEOUT_SECONDS = 15;
-  private static final int HTTP_SOCKET_TIMEOUT_SECONDS = 15;
+
+  // Socket timeout: maximum period of inactivity between two data packets
+  // arriving to the client once the connection is established.
+  private static final int HTTP_SOCKET_TIMEOUT_SECONDS = 30;
 
   private static final Logger logger =
       Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
@@ -82,7 +91,8 @@ public class StashApiClient {
     }
   }
 
-  public List<StashPullRequestResponseValue> getPullRequests() {
+  @Nonnull
+  public List<StashPullRequestResponseValue> getPullRequests() throws StashApiException {
     List<StashPullRequestResponseValue> pullRequestResponseValues =
         new ArrayList<StashPullRequestResponseValue>();
     try {
@@ -99,13 +109,14 @@ public class StashApiClient {
       }
       return pullRequestResponseValues;
     } catch (IOException e) {
-      logger.log(Level.WARNING, "invalid pull request response.", e);
+      throw new StashApiException("Cannot read list of pull requests", e);
     }
-    return Collections.emptyList();
   }
 
+  @Nonnull
   public List<StashPullRequestComment> getPullRequestComments(
-      String projectCode, String commentRepositoryName, String pullRequestId) {
+      String projectCode, String commentRepositoryName, String pullRequestId)
+      throws StashApiException {
 
     try {
       boolean isLastPage = false;
@@ -132,9 +143,12 @@ public class StashApiClient {
       }
       return extractComments(commentResponses);
     } catch (Exception e) {
-      logger.log(Level.WARNING, "invalid pull request response.", e);
+      throw new StashApiException(
+          format(
+              "%s/%s: cannot read comments for pull request %s",
+              projectCode, commentRepositoryName, pullRequestId),
+          e);
     }
-    return Collections.emptyList();
   }
 
   public void deletePullRequestComment(String pullRequestId, String commentId) {
@@ -142,28 +156,26 @@ public class StashApiClient {
     deleteRequest(path);
   }
 
+  @Nullable
   public StashPullRequestComment postPullRequestComment(String pullRequestId, String comment) {
     String path = pullRequestPath(pullRequestId) + "/comments";
     try {
       String response = postRequest(path, comment);
       return parseSingleCommentJson(response);
 
-    } catch (UnsupportedEncodingException e) {
-      e.printStackTrace();
     } catch (IOException e) {
       logger.log(Level.SEVERE, "Failed to post Stash PR comment " + path + " " + e);
     }
     return null;
   }
 
-  public StashPullRequestMergableResponse getPullRequestMergeStatus(String pullRequestId) {
+  @Nullable
+  public StashPullRequestMergeableResponse getPullRequestMergeStatus(String pullRequestId) {
     String path = pullRequestPath(pullRequestId) + "/merge";
     try {
       String response = getRequest(path);
       return parsePullRequestMergeStatus(response);
 
-    } catch (UnsupportedEncodingException e) {
-      e.printStackTrace();
     } catch (IOException e) {
       logger.log(Level.WARNING, "Failed to get Stash PR Merge Status " + path + " " + e);
     }
@@ -172,30 +184,16 @@ public class StashApiClient {
 
   public boolean mergePullRequest(String pullRequestId, String version) {
     String path = pullRequestPath(pullRequestId) + "/merge?version=" + version;
-    try {
-      String response = postRequest(path, null);
-      return !response.equals(Integer.toString(HttpStatus.SC_CONFLICT));
-
-    } catch (UnsupportedEncodingException e) {
-      e.printStackTrace();
-    } catch (IOException e) {
-      logger.log(Level.SEVERE, "Failed to merge Stash PR " + path + " " + e);
-    }
-    return false;
+    String response = postRequest(path, null);
+    return !response.equals(Integer.toString(HttpStatus.SC_CONFLICT));
   }
 
   private HttpClient getHttpClient() {
     HttpClient client = new HttpClient();
     HttpParams httpParams = client.getParams();
-    // ConnectionTimeout : This denotes the time elapsed before the connection established or Server
-    // responded to connection request.
     httpParams.setParameter(
-        CoreConnectionPNames.CONNECTION_TIMEOUT,
-        StashApiClient.HTTP_CONNECTION_TIMEOUT_SECONDS * 1000);
-    // SoTimeout : Maximum period inactivity between two consecutive data packets arriving at client
-    // side after connection is established.
-    httpParams.setParameter(
-        CoreConnectionPNames.SO_TIMEOUT, StashApiClient.HTTP_SOCKET_TIMEOUT_SECONDS * 1000);
+        CoreConnectionPNames.CONNECTION_TIMEOUT, HTTP_CONNECTION_TIMEOUT_SECONDS * 1000);
+    httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, HTTP_SOCKET_TIMEOUT_SECONDS * 1000);
 
     //        if (Jenkins.getInstance() != null) {
     //            ProxyConfiguration proxy = Jenkins.getInstance().proxy;
@@ -220,18 +218,18 @@ public class StashApiClient {
     HttpClient client = getHttpClient();
     client.getState().setCredentials(AuthScope.ANY, credentials);
 
-    GetMethod httpget = new GetMethod(path);
+    GetMethod request = new GetMethod(path);
     // http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html; section 14.10.
     // tells the server that we want it to close the connection when it has sent the response.
     // address large amount of close_wait sockets client and fin sockets server side
-    httpget.setRequestHeader("Connection", "close");
+    request.setRequestHeader("Connection", "close");
 
     client.getParams().setAuthenticationPreemptive(true);
     String response = null;
     FutureTask<String> httpTask = null;
     Thread thread;
     try {
-      // Run the http request in a future task so we have the opportunity
+      // Run the HTTP request in a future task so we have the opportunity
       // to cancel it if it gets hung up; which is possible if stuck at
       // socket native layer.  see issue JENKINS-30558
       httpTask =
@@ -239,24 +237,24 @@ public class StashApiClient {
               new Callable<String>() {
 
                 private HttpClient client;
-                private GetMethod httpget;
+                private GetMethod request;
 
                 @Override
                 public String call() throws Exception {
                   String response = null;
                   int responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
-                  responseCode = client.executeMethod(httpget);
+                  responseCode = client.executeMethod(request);
                   if (!validResponseCode(responseCode)) {
                     logger.log(
                         Level.SEVERE,
-                        "Failing to get response from Stash PR GET" + httpget.getPath());
+                        "Failing to get response from Stash PR GET" + request.getPath());
                     throw new RuntimeException(
                         "Didn't get a 200 response from Stash PR GET! Response; '"
                             + HttpStatus.getStatusText(responseCode)
                             + "' with message; "
                             + response);
                   }
-                  InputStream responseBodyAsStream = httpget.getResponseBodyAsStream();
+                  InputStream responseBodyAsStream = request.getResponseBodyAsStream();
                   StringWriter stringWriter = new StringWriter();
                   IOUtils.copy(responseBodyAsStream, stringWriter, "UTF-8");
                   response = stringWriter.toString();
@@ -264,25 +262,25 @@ public class StashApiClient {
                   return response;
                 }
 
-                public Callable<String> init(HttpClient client, GetMethod httpget) {
+                public Callable<String> init(HttpClient client, GetMethod request) {
                   this.client = client;
-                  this.httpget = httpget;
+                  this.request = request;
                   return this;
                 }
-              }.init(client, httpget));
+              }.init(client, request));
       thread = new Thread(httpTask);
       thread.start();
-      response = httpTask.get((long) StashApiClient.HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+      response = httpTask.get(HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
     } catch (TimeoutException e) {
       e.printStackTrace();
-      httpget.abort();
+      request.abort();
       throw new RuntimeException(e);
     } catch (Exception e) {
       e.printStackTrace();
       throw new RuntimeException(e);
     } finally {
-      httpget.releaseConnection();
+      request.releaseConnection();
     }
     logger.log(Level.FINEST, "PR-GET-RESPONSE:" + response);
     return response;
@@ -292,19 +290,19 @@ public class StashApiClient {
     HttpClient client = getHttpClient();
     client.getState().setCredentials(AuthScope.ANY, credentials);
 
-    DeleteMethod httppost = new DeleteMethod(path);
+    DeleteMethod request = new DeleteMethod(path);
     // http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html; section 14.10.
     // tells the server that we want it to close the connection when it has sent the response.
     // address large amount of close_wait sockets client and fin sockets server side
-    httppost.setRequestHeader("Connection", "close");
+    request.setRequestHeader("Connection", "close");
 
     client.getParams().setAuthenticationPreemptive(true);
-    int res = -1;
+    int response = -1;
     FutureTask<Integer> httpTask = null;
     Thread thread;
 
     try {
-      // Run the http request in a future task so we have the opportunity
+      // Run the HTTP request in a future task so we have the opportunity
       // to cancel it if it gets hung up; which is possible if stuck at
       // socket native layer.  see issue JENKINS-30558
       httpTask =
@@ -312,50 +310,50 @@ public class StashApiClient {
               new Callable<Integer>() {
 
                 private HttpClient client;
-                private DeleteMethod httppost;
+                private DeleteMethod request;
 
                 @Override
                 public Integer call() throws Exception {
-                  int res = -1;
-                  res = client.executeMethod(httppost);
-                  return res;
+                  int response = -1;
+                  response = client.executeMethod(request);
+                  return response;
                 }
 
-                public Callable<Integer> init(HttpClient client, DeleteMethod httppost) {
+                public Callable<Integer> init(HttpClient client, DeleteMethod request) {
                   this.client = client;
-                  this.httppost = httppost;
+                  this.request = request;
                   return this;
                 }
-              }.init(client, httppost));
+              }.init(client, request));
       thread = new Thread(httpTask);
       thread.start();
-      res = httpTask.get((long) StashApiClient.HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+      response = httpTask.get(HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
     } catch (TimeoutException e) {
       e.printStackTrace();
-      httppost.abort();
+      request.abort();
       throw new RuntimeException(e);
     } catch (Exception e) {
       e.printStackTrace();
       throw new RuntimeException(e);
     } finally {
-      httppost.releaseConnection();
+      request.releaseConnection();
     }
 
-    logger.log(Level.FINE, "Delete comment {" + path + "} returned result code; " + res);
+    logger.log(Level.FINE, "Delete comment {" + path + "} returned result code; " + response);
   }
 
-  private String postRequest(String path, String comment) throws UnsupportedEncodingException {
+  private String postRequest(String path, String comment) {
     logger.log(Level.FINEST, "PR-POST-REQUEST:" + path + " with: " + comment);
     HttpClient client = getHttpClient();
     client.getState().setCredentials(AuthScope.ANY, credentials);
 
-    PostMethod httppost = new PostMethod(path);
+    PostMethod request = new PostMethod(path);
     // http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html; section 14.10.
     // tells the server that we want it to close the connection when it has sent the response.
     // address large amount of close_wait sockets client and fin sockets server side
-    httppost.setRequestHeader("Connection", "close");
-    httppost.setRequestHeader("X-Atlassian-Token", "no-check"); // xsrf
+    request.setRequestHeader("Connection", "close");
+    request.setRequestHeader("X-Atlassian-Token", "no-check"); // xsrf
 
     if (comment != null) {
       ObjectNode node = mapper.getNodeFactory().objectNode();
@@ -368,7 +366,7 @@ public class StashApiClient {
       } catch (IOException e) {
         e.printStackTrace();
       }
-      httppost.setRequestEntity(requestEntity);
+      request.setRequestEntity(requestEntity);
     }
 
     client.getParams().setAuthenticationPreemptive(true);
@@ -377,7 +375,7 @@ public class StashApiClient {
     Thread thread;
 
     try {
-      // Run the http request in a future task so we have the opportunity
+      // Run the HTTP request in a future task so we have the opportunity
       // to cancel it if it gets hung up; which is possible if stuck at
       // socket native layer.  see issue JENKINS-30558
       httpTask =
@@ -385,25 +383,25 @@ public class StashApiClient {
               new Callable<String>() {
 
                 private HttpClient client;
-                private PostMethod httppost;
+                private PostMethod request;
 
                 @Override
                 public String call() throws Exception {
                   String response = "";
                   int responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
 
-                  responseCode = client.executeMethod(httppost);
+                  responseCode = client.executeMethod(request);
                   if (!validResponseCode(responseCode)) {
                     logger.log(
                         Level.SEVERE,
-                        "Failing to get response from Stash PR POST" + httppost.getPath());
+                        "Failing to get response from Stash PR POST" + request.getPath());
                     throw new RuntimeException(
                         "Didn't get a 200 response from Stash PR POST! Response; '"
                             + HttpStatus.getStatusText(responseCode)
                             + "' with message; "
                             + response);
                   }
-                  InputStream responseBodyAsStream = httppost.getResponseBodyAsStream();
+                  InputStream responseBodyAsStream = request.getResponseBodyAsStream();
                   StringWriter stringWriter = new StringWriter();
                   IOUtils.copy(responseBodyAsStream, stringWriter, "UTF-8");
                   response = stringWriter.toString();
@@ -412,25 +410,25 @@ public class StashApiClient {
                   return response;
                 }
 
-                public Callable<String> init(HttpClient client, PostMethod httppost) {
+                public Callable<String> init(HttpClient client, PostMethod request) {
                   this.client = client;
-                  this.httppost = httppost;
+                  this.request = request;
                   return this;
                 }
-              }.init(client, httppost));
+              }.init(client, request));
       thread = new Thread(httpTask);
       thread.start();
-      response = httpTask.get((long) StashApiClient.HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+      response = httpTask.get(HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
     } catch (TimeoutException e) {
       e.printStackTrace();
-      httppost.abort();
+      request.abort();
       throw new RuntimeException(e);
     } catch (Exception e) {
       e.printStackTrace();
       throw new RuntimeException(e);
     } finally {
-      httppost.releaseConnection();
+      request.releaseConnection();
     }
 
     logger.log(Level.FINEST, "PR-POST-RESPONSE:" + response);
@@ -458,6 +456,7 @@ public class StashApiClient {
     return parsedResponse;
   }
 
+  @Nonnull
   private List<StashPullRequestComment> extractComments(
       List<StashPullRequestActivityResponse> responses) {
     List<StashPullRequestComment> comments = new ArrayList<StashPullRequestComment>();
@@ -477,10 +476,10 @@ public class StashApiClient {
     return parsedResponse;
   }
 
-  protected static StashPullRequestMergableResponse parsePullRequestMergeStatus(String response)
+  protected static StashPullRequestMergeableResponse parsePullRequestMergeStatus(String response)
       throws IOException {
-    StashPullRequestMergableResponse parsedResponse;
-    parsedResponse = mapper.readValue(response, StashPullRequestMergableResponse.class);
+    StashPullRequestMergeableResponse parsedResponse;
+    parsedResponse = mapper.readValue(response, StashPullRequestMergeableResponse.class);
     return parsedResponse;
   }
 
@@ -569,6 +568,25 @@ public class StashApiClient {
     public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
         throws IOException {
       return this.getSSLContext().getSocketFactory().createSocket(socket, host, port, autoClose);
+    }
+  }
+
+  /**
+   * Indicates an error during interaction with the Bitbucket Server
+   *
+   * <p>This exception must be caught inside the plugin. Typical handling would be to retry the
+   * operation during the next polling cycle in the hope that the server or the network would
+   * recover by then.
+   */
+  public static class StashApiException extends Exception {
+    private static final long serialVersionUID = 1L;
+
+    public StashApiException(String message) {
+      super(message);
+    }
+
+    public StashApiException(String message, Throwable cause) {
+      super(message, cause);
     }
   }
 }

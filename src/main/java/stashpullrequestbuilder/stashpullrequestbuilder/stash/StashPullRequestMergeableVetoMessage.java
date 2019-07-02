@@ -7,7 +7,7 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
  * https://developer.atlassian.com/static/rest/stash/3.9.2/stash-rest.html#idp2785024
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class StashPullRequestMergableVetoMessage {
+public class StashPullRequestMergeableVetoMessage {
 
   private String summaryMessage;
   private String detailedMessage;

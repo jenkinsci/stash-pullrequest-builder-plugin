@@ -30,6 +30,7 @@ public class StashPullRequestComment implements Comparable<StashPullRequestComme
     this.text = text;
   }
 
+  @Override
   public int compareTo(StashPullRequestComment target) {
     if (this.getCommentId() > target.getCommentId()) {
       return 1;

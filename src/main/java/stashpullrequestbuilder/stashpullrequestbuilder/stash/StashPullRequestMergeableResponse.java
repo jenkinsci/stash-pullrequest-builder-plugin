@@ -8,11 +8,11 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
  * https://developer.atlassian.com/static/rest/stash/3.9.2/stash-rest.html#idp2785024
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class StashPullRequestMergableResponse {
+public class StashPullRequestMergeableResponse {
 
   private Boolean canMerge;
   private Boolean conflicted;
-  private ArrayList<StashPullRequestMergableVetoMessage> vetoes;
+  private ArrayList<StashPullRequestMergeableVetoMessage> vetoes;
 
   public Boolean getCanMerge() {
     return canMerge;
@@ -30,11 +30,11 @@ public class StashPullRequestMergableResponse {
     this.conflicted = conflicted;
   }
 
-  public ArrayList<StashPullRequestMergableVetoMessage> getVetoes() {
+  public ArrayList<StashPullRequestMergeableVetoMessage> getVetoes() {
     return vetoes;
   }
 
-  public void setVetoes(ArrayList<StashPullRequestMergableVetoMessage> vetoes) {
+  public void setVetoes(ArrayList<StashPullRequestMergeableVetoMessage> vetoes) {
     this.vetoes = vetoes;
   }
 }

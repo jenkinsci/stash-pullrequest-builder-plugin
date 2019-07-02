@@ -16,14 +16,12 @@ public class StashPullRequestsBuilder {
   private AbstractProject<?, ?> project;
   private StashBuildTrigger trigger;
   private StashRepository repository;
-  private StashBuilds builds;
 
   public StashPullRequestsBuilder(
-      @Nonnull AbstractProject project, @Nonnull StashBuildTrigger trigger) {
+      @Nonnull AbstractProject<?, ?> project, @Nonnull StashBuildTrigger trigger) {
     this.project = project;
     this.trigger = trigger;
-    this.repository = new StashRepository(trigger.getProjectPath(), this);
-    this.builds = new StashBuilds(trigger, repository);
+    this.repository = new StashRepository(project, trigger);
   }
 
   public void run() {
@@ -42,7 +40,7 @@ public class StashPullRequestsBuilder {
     return this.trigger;
   }
 
-  public StashBuilds getBuilds() {
-    return this.builds;
+  public StashRepository getRepository() {
+    return this.repository;
   }
 }
