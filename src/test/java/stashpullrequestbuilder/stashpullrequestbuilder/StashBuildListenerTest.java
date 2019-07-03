@@ -2,13 +2,22 @@ package stashpullrequestbuilder.stashpullrequestbuilder;
 
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.startsWith;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import hudson.model.FreeStyleBuild;
+import hudson.model.FreeStyleProject;
+import hudson.model.Result;
 import hudson.model.TaskListener;
+import hudson.triggers.Trigger;
+import hudson.triggers.TriggerDescriptor;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -71,6 +80,42 @@ public class StashBuildListenerTest {
     stashBuildListener.onStarted(build, taskListener);
 
     verify(build, never()).setDescription(anyString());
+  }
+
+  @Test
+  public void onCompleted_posts_finished_comment() throws Exception {
+    final String duration = "2 seconds";
+    final int buildNumber = 123;
+
+    StashBuildTrigger trigger = mock(StashBuildTrigger.class);
+    StashPullRequestsBuilder builder = mock(StashPullRequestsBuilder.class);
+    StashRepository repository = mock(StashRepository.class);
+    FreeStyleProject project = spy(jenkinsRule.createFreeStyleProject());
+
+    Map<TriggerDescriptor, Trigger<?>> triggerMap = new HashMap<TriggerDescriptor, Trigger<?>>();
+    triggerMap.put(StashBuildTrigger.descriptor, trigger);
+
+    when(build.getCause(eq(StashCause.class))).thenReturn(stashCause);
+    when(build.getParent()).thenReturn(project);
+    when(project.getTriggers()).thenReturn(triggerMap);
+    when(trigger.getBuilder()).thenReturn(builder);
+    when(builder.getRepository()).thenReturn(repository);
+    when(build.getResult()).thenReturn(Result.SUCCESS);
+    when(build.getDurationString()).thenReturn(duration);
+    when(build.getNumber()).thenReturn(buildNumber);
+
+    stashBuildListener.onCompleted(build, taskListener);
+
+    verify(repository, times(1))
+        .postFinishedComment(
+            eq(stashCause.getPullRequestId()),
+            eq(stashCause.getSourceCommitHash()),
+            eq(stashCause.getDestinationCommitHash()),
+            eq(Result.SUCCESS),
+            startsWith("http://localhost"),
+            eq(buildNumber),
+            eq(""),
+            eq(duration));
   }
 
   @Test
