@@ -117,7 +117,7 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
   }
 
   // Needed for Jelly Config
-  public String getcredentialsId() {
+  public String getCredentialsId() {
     return this.credentialsId;
   }
 
@@ -162,7 +162,7 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
     return checkDestinationCommit;
   }
 
-  public boolean isIgnoreSsl() {
+  public boolean getIgnoreSsl() {
     return ignoreSsl;
   }
 
@@ -178,7 +178,7 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
     return mergeOnSuccess;
   }
 
-  public boolean isCancelOutdatedJobsEnabled() {
+  public boolean getCancelOutdatedJobsEnabled() {
     return cancelOutdatedJobsEnabled;
   }
 
@@ -220,19 +220,19 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
     super.stop();
   }
 
-  public boolean isCheckMergeable() {
+  public boolean getCheckMergeable() {
     return checkMergeable;
   }
 
-  public boolean isCheckNotConflicted() {
+  public boolean getCheckNotConflicted() {
     return checkNotConflicted;
   }
 
-  public boolean isCheckProbeMergeStatus() {
+  public boolean getCheckProbeMergeStatus() {
     return checkProbeMergeStatus;
   }
 
-  public boolean isOnlyBuildOnComment() {
+  public boolean getOnlyBuildOnComment() {
     return onlyBuildOnComment;
   }
 

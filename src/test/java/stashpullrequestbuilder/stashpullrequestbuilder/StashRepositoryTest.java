@@ -516,7 +516,7 @@ public class StashRepositoryTest {
     when(trigger.getPassword()).thenReturn("Password");
     when(trigger.getProjectCode()).thenReturn(projectName);
     when(trigger.getRepositoryName()).thenReturn(repositoryName);
-    when(trigger.isIgnoreSsl()).thenReturn(false);
+    when(trigger.getIgnoreSsl()).thenReturn(false);
 
     stubFor(
         get(format(

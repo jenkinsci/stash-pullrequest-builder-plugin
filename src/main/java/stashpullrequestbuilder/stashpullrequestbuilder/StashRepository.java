@@ -86,7 +86,7 @@ public class StashRepository {
         trigger.getPassword(),
         trigger.getProjectCode(),
         trigger.getRepositoryName(),
-        trigger.isIgnoreSsl());
+        trigger.getIgnoreSsl());
   }
 
   public Collection<StashPullRequestResponseValue> getTargetPullRequests() {
@@ -256,7 +256,7 @@ public class StashRepository {
   public Queue.Item startJob(StashCause cause) {
     List<ParameterValue> values = getParameters(cause);
 
-    if (trigger.isCancelOutdatedJobsEnabled()) {
+    if (trigger.getCancelOutdatedJobsEnabled()) {
       cancelPreviousJobsInQueueThatMatch(cause);
       abortRunningJobsThatMatch(cause);
     }
@@ -367,9 +367,9 @@ public class StashRepository {
   }
 
   private boolean isPullRequestMergeable(StashPullRequestResponseValue pullRequest) {
-    if (trigger.isCheckMergeable()
-        || trigger.isCheckNotConflicted()
-        || trigger.isCheckProbeMergeStatus()) {
+    if (trigger.getCheckMergeable()
+        || trigger.getCheckNotConflicted()
+        || trigger.getCheckProbeMergeStatus()) {
       /* Request PR status from Stash, and consult our configuration
        * toggles on whether we care about certain verdicts in that
        * JSON answer, parsed into fields of the "response" object.
@@ -378,11 +378,11 @@ public class StashRepository {
       StashPullRequestMergeableResponse mergeable =
           client.getPullRequestMergeStatus(pullRequest.getId());
       boolean res = true;
-      if (trigger.isCheckMergeable()) {
+      if (trigger.getCheckMergeable()) {
         res &= mergeable.getCanMerge();
       }
 
-      if (trigger.isCheckNotConflicted()) {
+      if (trigger.getCheckNotConflicted()) {
         res &= !mergeable.getConflicted();
       }
 
@@ -459,7 +459,7 @@ public class StashRepository {
       return false;
     }
 
-    boolean isOnlyBuildOnComment = trigger.isOnlyBuildOnComment();
+    boolean isOnlyBuildOnComment = trigger.getOnlyBuildOnComment();
 
     if (isOnlyBuildOnComment) {
       shouldBuild = false;
