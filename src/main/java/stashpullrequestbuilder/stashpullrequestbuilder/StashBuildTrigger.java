@@ -9,6 +9,7 @@ import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import hudson.Extension;
+import hudson.ProxyConfiguration;
 import hudson.model.AbstractProject;
 import hudson.model.Item;
 import hudson.model.Queue;
@@ -35,6 +36,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
   private final String projectPath;
   private final String cron;
   private final String stashHost;
+  private transient JSONObject proxySettings;
   private final String credentialsId;
   private final String projectCode;
   private final String repositoryName;
@@ -62,6 +64,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
       String projectPath,
       String cron,
       String stashHost,
+      JSONObject proxySettings,
       String credentialsId,
       String projectCode,
       String repositoryName,
@@ -81,6 +84,7 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     this.projectPath = projectPath;
     this.cron = cron;
     this.stashHost = stashHost;
+    this.proxySettings = proxySettings;
     this.credentialsId = credentialsId;
     this.projectCode = projectCode;
     this.repositoryName = repositoryName;
@@ -104,6 +108,50 @@ public class StashBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
   public String getStashHost() {
     return stashHost;
+  }
+
+  public JSONObject getProxySettings() {
+    return proxySettings;
+  }
+
+  public JSONObject getProxyDetails() {
+    return this.getProxySettings().getJSONObject("proxyChoice");
+  }
+
+  private String getProxyType() {
+    return this.getProxyDetails().getString("value");
+  }
+
+  public ProxyConfiguration getProxy() {
+    ProxyConfiguration proxy = null;
+
+    switch (this.getProxyType()) {
+      default:
+      case "jenkins":
+        proxy = Jenkins.getInstance().proxy;
+        break;
+      case "custom":
+        JSONObject proxyDetails = this.getProxyDetails();
+
+        proxy =
+            new ProxyConfiguration(
+                proxyDetails.getString("proxyHost"),
+                proxyDetails.getInt("proxyPort"),
+                proxyDetails.getString("proxyUser"),
+                proxyDetails.getString("proxyPass"));
+    }
+
+    return proxy;
+  }
+
+  /**
+   * Helper method for the jelly view to determine proxy type.
+   *
+   * @param type
+   * @return
+   */
+  public boolean isProxyType(String type) {
+    return (getProxyType().equalsIgnoreCase(type)) ? true : false;
   }
 
   public String getProjectPath() {

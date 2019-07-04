@@ -6,6 +6,32 @@
   <f:entry title="Stash URL" field="stashHost">
       <f:textbox />
   </f:entry>
+  <f:nested>
+    <table>
+      <f:optionalBlock title="Enable proxy" name="proxySettings" checked="${instance.getProxySettings() != null}">
+        <f:nested>
+          <table>
+            <f:radioBlock name="proxyChoice" value="jenkins" title="Inherit from Jenkins" checked="${(instance.getProxySettings() != null) ? instance.isProxyType('jenkins') : true}">
+            </f:radioBlock>
+            <f:radioBlock name="proxyChoice" value="custom" title="Custom" checked="${(instance.getProxySettings() != null) ? instance.isProxyType('custom') : false}">
+              <f:entry title="Proxy Host" field="proxyHost">
+                <f:textbox value="${(instance.getProxySettings() != null &amp;&amp; instance.isProxyType('custom')) ? instance.getProxyDetails().getString('proxyHost') : ''}" />
+              </f:entry>
+              <f:entry title="Proxy Port" field="proxyPort">
+                <f:textbox value="${(instance.getProxySettings() != null &amp;&amp; instance.isProxyType('custom')) ? instance.getProxyDetails().getInt('proxyPort') : ''}" />
+              </f:entry>
+              <f:entry title="Proxy Username" field="proxyUser">
+                <f:textbox value="${(instance.getProxySettings() != null &amp;&amp; instance.isProxyType('custom')) ? instance.getProxyDetails().getString('proxyUser') : ''}" />
+              </f:entry>
+              <f:entry title="Password" field="proxyPass">
+                <f:password value="${(instance.getProxySettings() != null &amp;&amp; instance.isProxyType('custom')) ? instance.getProxyDetails().getString('proxyPass') : ''}" />
+              </f:entry>
+            </f:radioBlock>
+          </table>
+        </f:nested>
+      </f:optionalBlock>
+    </table>
+  </f:nested>
   <f:entry title="Stash credentials (username/password)" field="credentialsId">
     <c:select />
   </f:entry>
