@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -67,10 +68,10 @@ public class StashRepository {
   private StashApiClient client;
 
   public StashRepository(@Nonnull Job<?, ?> job, @Nonnull StashBuildTrigger trigger) {
-    this(job, trigger, null);
+    this(job, trigger, makeStashApiClient(trigger));
   }
 
-  // For unit tests only
+  // Visible for unit tests
   StashRepository(
       @Nonnull Job<?, ?> job, @Nonnull StashBuildTrigger trigger, StashApiClient client) {
     this.job = job;
@@ -78,15 +79,14 @@ public class StashRepository {
     this.client = client;
   }
 
-  public void init() {
-    client =
-        new StashApiClient(
-            trigger.getStashHost(),
-            trigger.getUsername(),
-            trigger.getPassword(),
-            trigger.getProjectCode(),
-            trigger.getRepositoryName(),
-            trigger.isIgnoreSsl());
+  private static StashApiClient makeStashApiClient(StashBuildTrigger trigger) {
+    return new StashApiClient(
+        trigger.getStashHost(),
+        trigger.getUsername(),
+        trigger.getPassword(),
+        trigger.getProjectCode(),
+        trigger.getRepositoryName(),
+        trigger.isIgnoreSsl());
   }
 
   public Collection<StashPullRequestResponseValue> getTargetPullRequests() {
@@ -98,7 +98,7 @@ public class StashRepository {
     try {
       pullRequests = client.getPullRequests();
     } catch (StashApiException e) {
-      logger.info(format("%s: cannot fetch pull request list: %s", job.getName(), e));
+      logger.log(Level.INFO, format("%s: cannot fetch pull request list", job.getName()), e);
       return targetPullRequests;
     }
 
@@ -272,10 +272,12 @@ public class StashRepository {
       try {
         additionalParameters = getAdditionalParameters(pullRequest);
       } catch (StashApiException e) {
-        logger.info(
+        logger.log(
+            Level.INFO,
             format(
-                "%s: cannot read additional parameters for pull request %s, skipping: %s",
-                job.getName(), pullRequest.getId(), e));
+                "%s: cannot read additional parameters for pull request %s, skipping",
+                job.getName(), pullRequest.getId()),
+            e);
         continue;
       }
 
@@ -283,10 +285,12 @@ public class StashRepository {
         try {
           deletePreviousBuildFinishedComments(pullRequest);
         } catch (StashApiException e) {
-          logger.info(
+          logger.log(
+              Level.INFO,
               format(
-                  "%s: cannot delete old \"BuildFinished\" comments for pull request %s: %s",
-                  job.getName(), pullRequest, e));
+                  "%s: cannot delete old \"BuildFinished\" comments for pull request %s",
+                  job.getName(), pullRequest),
+              e);
         }
       }
 
@@ -473,7 +477,7 @@ public class StashRepository {
     try {
       comments = client.getPullRequestComments(owner, repositoryName, id);
     } catch (StashApiException e) {
-      logger.info(format("%s: cannot read pull request comments: %s", job.getName(), e));
+      logger.log(Level.INFO, format("%s: cannot read pull request comments", job.getName()), e);
       return false;
     }
 
