@@ -83,7 +83,6 @@ public class StashBuildListenerTest {
 
   private StashRepository setup_onCompleted(boolean mergeOnSuccess) throws Exception {
     StashBuildTrigger trigger = mock(StashBuildTrigger.class);
-    StashPullRequestsBuilder builder = mock(StashPullRequestsBuilder.class);
     StashRepository repository = mock(StashRepository.class);
     FreeStyleProject project = spy(jenkinsRule.createFreeStyleProject("TestProject"));
 
@@ -93,8 +92,7 @@ public class StashBuildListenerTest {
     when(build.getCause(eq(StashCause.class))).thenReturn(stashCause);
     when(build.getParent()).thenReturn(project);
     when(project.getTriggers()).thenReturn(triggerMap);
-    when(trigger.getBuilder()).thenReturn(builder);
-    when(builder.getRepository()).thenReturn(repository);
+    when(trigger.getRepository()).thenReturn(repository);
     when(build.getResult()).thenReturn(Result.SUCCESS);
     when(trigger.getMergeOnSuccess()).thenReturn(mergeOnSuccess);
 

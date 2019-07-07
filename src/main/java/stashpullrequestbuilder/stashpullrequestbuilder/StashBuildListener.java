@@ -57,7 +57,7 @@ public class StashBuildListener extends RunListener<Run<?, ?>> {
       return;
     }
 
-    StashRepository repository = trigger.getBuilder().getRepository();
+    StashRepository repository = trigger.getRepository();
     Result result = run.getResult();
     // Note: current code should no longer use "new JenkinsLocationConfiguration()"
     // as only one instance per runtime is really supported by the current core.

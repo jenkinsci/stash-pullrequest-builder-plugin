@@ -663,4 +663,10 @@ public class StashRepository {
   private boolean isPhrasesContain(String text, String phrase) {
     return text != null && text.toLowerCase().contains(phrase.trim().toLowerCase());
   }
+
+  public void pollRepository() {
+    logger.info(format("Build Start (%s).", job.getName()));
+    Collection<StashPullRequestResponseValue> targetPullRequests = getTargetPullRequests();
+    addFutureBuildTasks(targetPullRequests);
+  }
 }

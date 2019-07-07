@@ -422,6 +422,22 @@ public class StashRepositoryTest {
   }
 
   @Test
+  public void pollRepository_schedules_build_for_open_pull_request() throws Exception {
+    StashPullRequestComment response = new StashPullRequestComment();
+    response.setCommentId(1);
+
+    when(trigger.getStashHost()).thenReturn("StashHost");
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
+    when(stashApiClient.getPullRequestComments(any(), any(), any()))
+        .thenReturn(Collections.emptyList());
+    when(stashApiClient.postPullRequestComment(any(), any())).thenReturn(response);
+
+    stashRepository.pollRepository();
+
+    assertThat(Jenkins.getInstance().getQueue().getItems(), is(arrayWithSize(1)));
+  }
+
+  @Test
   public void startJob_passes_parameter_with_default_value() {
     cause = makeCause(null);
     ParameterDefinition parameterDefinition =
