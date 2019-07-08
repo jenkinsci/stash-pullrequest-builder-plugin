@@ -34,7 +34,6 @@ import org.kohsuke.stapler.StaplerRequest;
 public class StashBuildTrigger extends Trigger<Job<?, ?>> {
   private static final Logger logger =
       Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
-  private final String projectPath;
   private final String cron;
   private final String stashHost;
   private final String credentialsId;
@@ -61,7 +60,6 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
 
   @DataBoundConstructor
   public StashBuildTrigger(
-      String projectPath,
       String cron,
       String stashHost,
       String credentialsId,
@@ -80,7 +78,6 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
       boolean cancelOutdatedJobsEnabled)
       throws ANTLRException {
     super(cron);
-    this.projectPath = projectPath;
     this.cron = cron;
     this.stashHost = stashHost;
     this.credentialsId = credentialsId;
@@ -106,10 +103,6 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
 
   public String getStashHost() {
     return stashHost;
-  }
-
-  public String getProjectPath() {
-    return this.projectPath;
   }
 
   public String getCron() {
