@@ -34,24 +34,27 @@ import org.kohsuke.stapler.StaplerRequest;
 public class StashBuildTrigger extends Trigger<Job<?, ?>> {
   private static final Logger logger =
       Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
+
+  // Required settings
   private final String cron;
   private final String stashHost;
   private final String credentialsId;
   private final String projectCode;
   private final String repositoryName;
-  private final String ciSkipPhrases;
-  private final String ciBuildPhrases;
-  private final String targetBranchesToBuild;
-  private final boolean ignoreSsl;
-  private final boolean checkDestinationCommit;
-  private final boolean checkMergeable;
-  private final boolean mergeOnSuccess;
-  private final boolean checkNotConflicted;
-  private final boolean onlyBuildOnComment;
-  private final boolean deletePreviousBuildFinishComments;
-  private final boolean cancelOutdatedJobsEnabled;
 
+  // Optional settings
+  private boolean ignoreSsl;
+  private String targetBranchesToBuild;
+  private boolean checkDestinationCommit;
+  private boolean checkNotConflicted;
+  private boolean checkMergeable;
   private boolean checkProbeMergeStatus;
+  private boolean mergeOnSuccess;
+  private boolean deletePreviousBuildFinishComments;
+  private boolean cancelOutdatedJobsEnabled;
+  private String ciSkipPhrases;
+  private boolean onlyBuildOnComment;
+  private String ciBuildPhrases;
 
   private transient StashPullRequestsBuilder stashPullRequestsBuilder;
 
@@ -63,18 +66,7 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
       String stashHost,
       String credentialsId,
       String projectCode,
-      String repositoryName,
-      String ciSkipPhrases,
-      boolean ignoreSsl,
-      boolean checkDestinationCommit,
-      boolean checkMergeable,
-      boolean mergeOnSuccess,
-      boolean checkNotConflicted,
-      boolean onlyBuildOnComment,
-      String ciBuildPhrases,
-      boolean deletePreviousBuildFinishComments,
-      String targetBranchesToBuild,
-      boolean cancelOutdatedJobsEnabled)
+      String repositoryName)
       throws ANTLRException {
     super(cron);
     this.cron = cron;
@@ -82,33 +74,16 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
     this.credentialsId = credentialsId;
     this.projectCode = projectCode;
     this.repositoryName = repositoryName;
-    this.ciSkipPhrases = ciSkipPhrases;
-    this.cancelOutdatedJobsEnabled = cancelOutdatedJobsEnabled;
-    this.ciBuildPhrases = ciBuildPhrases == null ? "test this please" : ciBuildPhrases;
-    this.ignoreSsl = ignoreSsl;
-    this.checkDestinationCommit = checkDestinationCommit;
-    this.checkMergeable = checkMergeable;
-    this.mergeOnSuccess = mergeOnSuccess;
-    this.checkNotConflicted = checkNotConflicted;
-    this.onlyBuildOnComment = onlyBuildOnComment;
-    this.deletePreviousBuildFinishComments = deletePreviousBuildFinishComments;
-    this.targetBranchesToBuild = targetBranchesToBuild;
-  }
-
-  @DataBoundSetter
-  public void setCheckProbeMergeStatus(boolean checkProbeMergeStatus) {
-    this.checkProbeMergeStatus = checkProbeMergeStatus;
-  }
-
-  public String getStashHost() {
-    return stashHost;
   }
 
   public String getCron() {
     return this.cron;
   }
 
-  // Needed for Jelly Config
+  public String getStashHost() {
+    return stashHost;
+  }
+
   public String getCredentialsId() {
     return this.credentialsId;
   }
@@ -142,36 +117,112 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
     return repositoryName;
   }
 
-  public String getCiSkipPhrases() {
-    return ciSkipPhrases;
-  }
-
-  public String getCiBuildPhrases() {
-    return ciBuildPhrases == null ? "test this please" : ciBuildPhrases;
-  }
-
-  public boolean getCheckDestinationCommit() {
-    return checkDestinationCommit;
-  }
-
   public boolean getIgnoreSsl() {
     return ignoreSsl;
   }
 
-  public boolean getDeletePreviousBuildFinishComments() {
-    return deletePreviousBuildFinishComments;
+  @DataBoundSetter
+  public void setIgnoreSsl(boolean ignoreSsl) {
+    this.ignoreSsl = ignoreSsl;
   }
 
   public String getTargetBranchesToBuild() {
     return targetBranchesToBuild;
   }
 
+  @DataBoundSetter
+  public void setTargetBranchesToBuild(String targetBranchesToBuild) {
+    this.targetBranchesToBuild = targetBranchesToBuild;
+  }
+
+  public boolean getCheckDestinationCommit() {
+    return checkDestinationCommit;
+  }
+
+  @DataBoundSetter
+  public void setCheckDestinationCommit(boolean checkDestinationCommit) {
+    this.checkDestinationCommit = checkDestinationCommit;
+  }
+
+  public boolean getCheckNotConflicted() {
+    return checkNotConflicted;
+  }
+
+  @DataBoundSetter
+  public void setCheckNotConflicted(boolean checkNotConflicted) {
+    this.checkNotConflicted = checkNotConflicted;
+  }
+
+  public boolean getCheckMergeable() {
+    return checkMergeable;
+  }
+
+  @DataBoundSetter
+  public void setCheckMergeable(boolean checkMergeable) {
+    this.checkMergeable = checkMergeable;
+  }
+
+  public boolean getCheckProbeMergeStatus() {
+    return checkProbeMergeStatus;
+  }
+
+  @DataBoundSetter
+  public void setCheckProbeMergeStatus(boolean checkProbeMergeStatus) {
+    this.checkProbeMergeStatus = checkProbeMergeStatus;
+  }
+
   public boolean getMergeOnSuccess() {
     return mergeOnSuccess;
   }
 
+  @DataBoundSetter
+  public void setMergeOnSuccess(boolean mergeOnSuccess) {
+    this.mergeOnSuccess = mergeOnSuccess;
+  }
+
+  public boolean getDeletePreviousBuildFinishComments() {
+    return deletePreviousBuildFinishComments;
+  }
+
+  @DataBoundSetter
+  public void setDeletePreviousBuildFinishComments(boolean deletePreviousBuildFinishComments) {
+    this.deletePreviousBuildFinishComments = deletePreviousBuildFinishComments;
+  }
+
   public boolean getCancelOutdatedJobsEnabled() {
     return cancelOutdatedJobsEnabled;
+  }
+
+  @DataBoundSetter
+  public void setCancelOutdatedJobsEnabled(boolean cancelOutdatedJobsEnabled) {
+    this.cancelOutdatedJobsEnabled = cancelOutdatedJobsEnabled;
+  }
+
+  public String getCiSkipPhrases() {
+    return ciSkipPhrases;
+  }
+
+  @DataBoundSetter
+  public void setCiSkipPhrases(String ciSkipPhrases) {
+    this.ciSkipPhrases = ciSkipPhrases;
+  }
+
+  public boolean getOnlyBuildOnComment() {
+    return onlyBuildOnComment;
+  }
+
+  @DataBoundSetter
+  public void setOnlyBuildOnComment(boolean onlyBuildOnComment) {
+    this.onlyBuildOnComment = onlyBuildOnComment;
+  }
+
+  public String getCiBuildPhrases() {
+    return ciBuildPhrases == null ? "test this please" : ciBuildPhrases;
+  }
+
+  @DataBoundSetter
+  public void setCiBuildPhrases(String ciBuildPhrases) {
+    this.ciBuildPhrases = ciBuildPhrases;
   }
 
   @Override
@@ -210,22 +261,6 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
   public void stop() {
     stashPullRequestsBuilder = null;
     super.stop();
-  }
-
-  public boolean getCheckMergeable() {
-    return checkMergeable;
-  }
-
-  public boolean getCheckNotConflicted() {
-    return checkNotConflicted;
-  }
-
-  public boolean getCheckProbeMergeStatus() {
-    return checkProbeMergeStatus;
-  }
-
-  public boolean getOnlyBuildOnComment() {
-    return onlyBuildOnComment;
   }
 
   public static final class DescriptorImpl extends TriggerDescriptor {
