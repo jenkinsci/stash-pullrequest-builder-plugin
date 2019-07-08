@@ -14,7 +14,6 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
 import org.mockito.quality.Strictness;
-import stashpullrequestbuilder.stashpullrequestbuilder.StashBuildTrigger.StashBuildTriggerDescriptor;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StashBuildTriggerTest {
@@ -24,7 +23,7 @@ public class StashBuildTriggerTest {
 
   @Test
   public void check_getters() throws Exception {
-    StashBuildTriggerDescriptor descriptor = StashBuildTrigger.descriptor;
+    StashBuildTrigger.DescriptorImpl descriptor = StashBuildTrigger.descriptor;
 
     // Field names from config.jelly
     Iterable<String> properties =

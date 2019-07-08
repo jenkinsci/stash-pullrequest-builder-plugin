@@ -55,8 +55,7 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
 
   private transient StashPullRequestsBuilder stashPullRequestsBuilder;
 
-  @Extension
-  public static final StashBuildTriggerDescriptor descriptor = new StashBuildTriggerDescriptor();
+  @Extension public static final DescriptorImpl descriptor = new DescriptorImpl();
 
   @DataBoundConstructor
   public StashBuildTrigger(
@@ -229,8 +228,8 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
     return onlyBuildOnComment;
   }
 
-  public static final class StashBuildTriggerDescriptor extends TriggerDescriptor {
-    public StashBuildTriggerDescriptor() {
+  public static final class DescriptorImpl extends TriggerDescriptor {
+    public DescriptorImpl() {
       load();
     }
 
