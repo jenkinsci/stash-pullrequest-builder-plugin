@@ -147,7 +147,6 @@ public class StashRepositoryTest {
   @Test
   public void getTargetPullRequests_accepts_open_pull_requests() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
 
     assertThat(stashRepository.getTargetPullRequests(), contains(pullRequest));
   }
@@ -171,7 +170,6 @@ public class StashRepositoryTest {
   @Test
   public void getTargetPullRequests_accepts_matching_branches() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn("release/.*,feature/.*,testing/.*");
 
     assertThat(stashRepository.getTargetPullRequests(), contains(pullRequest));
@@ -180,7 +178,6 @@ public class StashRepositoryTest {
   @Test
   public void getTargetPullRequests_accepts_matching_branches_with_padding() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild())
         .thenReturn("\trelease/.*, \n\tfeature/.* \r\n, testing/.*\r");
 
@@ -190,7 +187,6 @@ public class StashRepositoryTest {
   @Test
   public void getTargetPullRequests_skips_mismatching_branches() throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn("release/.*,testing/.*");
 
     assertThat(stashRepository.getTargetPullRequests(), empty());
@@ -200,7 +196,6 @@ public class StashRepositoryTest {
   public void getTargetPullRequests_accepts_any_branch_if_Branches_to_Build_is_empty()
       throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn("");
 
     assertThat(stashRepository.getTargetPullRequests(), contains(pullRequest));
@@ -210,7 +205,6 @@ public class StashRepositoryTest {
   public void getTargetPullRequests_accepts_any_branch_if_Branches_to_Build_is_null()
       throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(trigger.getTargetBranchesToBuild()).thenReturn(null);
 
     assertThat(stashRepository.getTargetPullRequests(), contains(pullRequest));
@@ -488,7 +482,6 @@ public class StashRepositoryTest {
   public void getTargetPullRequests_skips_pull_request_if_getPullRequestComments_throws()
       throws Exception {
     when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
-    when(trigger.getCiSkipPhrases()).thenReturn("NO TEST");
     when(stashApiClient.getPullRequestComments(any(), any(), any()))
         .thenThrow(new StashApiException("cannot read PR comments"));
 
