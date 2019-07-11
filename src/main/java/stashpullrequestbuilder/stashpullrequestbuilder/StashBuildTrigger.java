@@ -44,17 +44,17 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
 
   // Optional settings
   private boolean ignoreSsl;
-  private String targetBranchesToBuild;
+  private String targetBranchesToBuild = "";
   private boolean checkDestinationCommit;
   private boolean checkNotConflicted;
   private boolean checkMergeable;
-  private boolean checkProbeMergeStatus;
+  private boolean checkProbeMergeStatus = true;
   private boolean mergeOnSuccess;
   private boolean deletePreviousBuildFinishComments;
   private boolean cancelOutdatedJobsEnabled;
-  private String ciSkipPhrases;
+  private String ciSkipPhrases = DescriptorImpl.DEFAULT_CI_SKIP_PHRASES;
   private boolean onlyBuildOnComment;
-  private String ciBuildPhrases;
+  private String ciBuildPhrases = DescriptorImpl.DEFAULT_CI_BUILD_PHRASES;
 
   private transient StashPullRequestsBuilder stashPullRequestsBuilder;
 
@@ -217,7 +217,7 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
   }
 
   public String getCiBuildPhrases() {
-    return ciBuildPhrases == null ? "test this please" : ciBuildPhrases;
+    return ciBuildPhrases;
   }
 
   @DataBoundSetter
@@ -264,6 +264,9 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
   }
 
   public static final class DescriptorImpl extends TriggerDescriptor {
+    public static final String DEFAULT_CI_SKIP_PHRASES = "NO TEST";
+    public static final String DEFAULT_CI_BUILD_PHRASES = "test this please";
+
     public DescriptorImpl() {
       load();
     }

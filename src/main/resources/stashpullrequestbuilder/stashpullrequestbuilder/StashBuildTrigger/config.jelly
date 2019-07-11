@@ -44,13 +44,13 @@
       <f:checkbox default="false"/>
     </f:entry>
     <f:entry title="Phrase to disable builds" field="ciSkipPhrases">
-      <f:textbox default="NO TEST" />
+      <f:textbox default="${descriptor.DEFAULT_CI_SKIP_PHRASES}"/>
     </f:entry>
     <f:entry title="Only build if asked with the build phrase" field="onlyBuildOnComment">
       <f:checkbox default="false"/>
     </f:entry>
     <f:entry title="Phrase to request a (re-)build" field="ciBuildPhrases">
-      <f:textbox default="test this please"/>
+      <f:textbox default="${descriptor.DEFAULT_CI_BUILD_PHRASES}"/>
     </f:entry>
   </f:advanced>
 </j:jelly>
