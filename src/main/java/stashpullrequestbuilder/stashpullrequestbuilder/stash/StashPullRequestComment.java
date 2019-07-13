@@ -1,13 +1,11 @@
 package stashpullrequestbuilder.stashpullrequestbuilder.stash;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 /** Created by Nathan McCarthy */
-@SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class StashPullRequestComment implements Comparable<StashPullRequestComment> {
+public class StashPullRequestComment {
 
   private Integer commentId;
   private String text;
@@ -28,16 +26,5 @@ public class StashPullRequestComment implements Comparable<StashPullRequestComme
 
   public void setText(String text) {
     this.text = text;
-  }
-
-  @Override
-  public int compareTo(StashPullRequestComment target) {
-    if (this.getCommentId() > target.getCommentId()) {
-      return 1;
-    } else if (this.getCommentId().equals(target.getCommentId())) {
-      return 0;
-    } else {
-      return -1;
-    }
   }
 }
