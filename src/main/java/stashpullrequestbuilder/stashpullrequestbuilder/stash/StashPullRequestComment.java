@@ -1,11 +1,11 @@
 package stashpullrequestbuilder.stashpullrequestbuilder.stash;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.util.Objects;
+import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 /** Created by Nathan McCarthy */
-@SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class StashPullRequestComment implements Comparable<StashPullRequestComment> {
 
@@ -31,13 +31,31 @@ public class StashPullRequestComment implements Comparable<StashPullRequestComme
   }
 
   @Override
-  public int compareTo(StashPullRequestComment target) {
-    if (this.getCommentId() > target.getCommentId()) {
-      return 1;
-    } else if (this.getCommentId().equals(target.getCommentId())) {
-      return 0;
-    } else {
-      return -1;
+  public int hashCode() {
+    return (commentId == null) ? Integer.MIN_VALUE : commentId;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof StashPullRequestComment)) {
+      return false;
     }
+
+    StashPullRequestComment other = (StashPullRequestComment) o;
+
+    return Objects.equals(this.commentId, other.commentId)
+        && StringUtils.equals(this.text, other.text);
+  }
+
+  @Override
+  public int compareTo(StashPullRequestComment other) {
+    int ret =
+        Objects.compare(this.commentId, other.commentId, (Integer a, Integer b) -> a.compareTo(b));
+
+    if (ret != 0) {
+      return ret;
+    }
+
+    return Objects.compare(this.text, other.text, (String a, String b) -> a.compareTo(b));
   }
 }
