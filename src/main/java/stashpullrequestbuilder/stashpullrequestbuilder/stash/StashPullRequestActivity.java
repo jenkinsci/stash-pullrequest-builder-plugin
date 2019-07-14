@@ -1,7 +1,7 @@
 package stashpullrequestbuilder.stashpullrequestbuilder.stash;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 /** Created by Nathan on 20/03/2015. */
 @SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")

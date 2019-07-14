@@ -1,7 +1,7 @@
 package stashpullrequestbuilder.stashpullrequestbuilder.stash;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.ArrayList;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 /**
  * If pull request is mergeable

@@ -2,6 +2,8 @@ package stashpullrequestbuilder.stashpullrequestbuilder.stash;
 
 import static java.lang.String.format;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,8 +51,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.params.CoreConnectionPNames;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.ObjectNode;
 
 /** Created by Nathan McCarthy */
 @SuppressFBWarnings("EQ_DOESNT_OVERRIDE_EQUALS")

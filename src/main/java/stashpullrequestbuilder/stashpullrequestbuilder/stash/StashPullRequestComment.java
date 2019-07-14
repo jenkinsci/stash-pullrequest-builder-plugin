@@ -1,8 +1,8 @@
 package stashpullrequestbuilder.stashpullrequestbuilder.stash;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
-import org.codehaus.jackson.annotate.JsonProperty;
 
 /** Created by Nathan McCarthy */
 @JsonIgnoreProperties(ignoreUnknown = true)

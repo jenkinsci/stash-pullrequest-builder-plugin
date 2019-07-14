@@ -25,13 +25,13 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.github.tomakehurst.wiremock.client.BasicCredentials;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import org.codehaus.jackson.JsonParseException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
