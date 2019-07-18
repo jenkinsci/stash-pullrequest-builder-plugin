@@ -57,6 +57,7 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
   private String ciBuildPhrases = DescriptorImpl.DEFAULT_CI_BUILD_PHRASES;
 
   private transient StashRepository stashRepository;
+  private transient StashPollingAction stashPollingAction;
 
   @Extension public static final DescriptorImpl descriptor = new DescriptorImpl();
 
@@ -225,15 +226,25 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
     this.ciBuildPhrases = ciBuildPhrases;
   }
 
+  public StashPollingAction getStashPollingAction() {
+    return stashPollingAction;
+  }
+
   @Override
   public void start(Job<?, ?> job, boolean newInstance) {
     super.start(job, newInstance);
+
+    if (stashPollingAction == null) {
+      stashPollingAction = new StashPollingAction(job);
+    }
+
     try {
       Objects.requireNonNull(job, "job is null");
       this.stashRepository = new StashRepository(job, this);
+
     } catch (NullPointerException e) {
       logger.log(Level.SEVERE, "Can't start trigger", e);
-      return;
+      stashPollingAction.log("Can't start trigger", e);
     }
   }
 
@@ -260,6 +271,7 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
   @Override
   public void stop() {
     stashRepository = null;
+    stashPollingAction = null;
     super.stop();
   }
 

@@ -2,6 +2,7 @@ package stashpullrequestbuilder.stashpullrequestbuilder;
 
 import static java.lang.String.format;
 
+import hudson.Util;
 import hudson.model.Cause;
 import hudson.model.CauseAction;
 import hudson.model.Executor;
@@ -15,6 +16,7 @@ import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.StringParameterValue;
 import java.lang.invoke.MethodHandles;
+import java.text.SimpleDateFormat;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -67,6 +69,8 @@ public class StashRepository {
   private StashBuildTrigger trigger;
   private StashApiClient client;
 
+  private long pollStartTime;
+
   public StashRepository(@Nonnull Job<?, ?> job, @Nonnull StashBuildTrigger trigger) {
     this(job, trigger, makeStashApiClient(trigger));
   }
@@ -89,8 +93,16 @@ public class StashRepository {
         trigger.getIgnoreSsl());
   }
 
+  private static String logTimestamp() {
+    return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z").format(new java.util.Date());
+  }
+
   public Collection<StashPullRequestResponseValue> getTargetPullRequests() {
-    logger.info(format("Fetch PullRequests (%s).", job.getName()));
+    pollStartTime = System.currentTimeMillis();
+    StashPollingAction pollLog = trigger.getStashPollingAction();
+    pollLog.resetLog();
+    pollLog.log("{}: poll started", logTimestamp());
+
     List<StashPullRequestResponseValue> targetPullRequests =
         new ArrayList<StashPullRequestResponseValue>();
 
@@ -101,15 +113,21 @@ public class StashRepository {
     try {
       pullRequests = client.getPullRequests();
     } catch (StashApiException e) {
+      pollLog.log("Cannot fetch pull request list", e);
       logger.log(Level.INFO, format("%s: cannot fetch pull request list", job.getName()), e);
       return targetPullRequests;
     }
+
+    pollLog.log("Number of open pull requests: {}", pullRequests.size());
 
     for (StashPullRequestResponseValue pullRequest : pullRequests) {
       if (isBuildTarget(pullRequest)) {
         targetPullRequests.add(pullRequest);
       }
     }
+
+    pollLog.log("Number of pull requests to be built: {}", targetPullRequests.size());
+
     return targetPullRequests;
   }
 
@@ -277,6 +295,8 @@ public class StashRepository {
   }
 
   public void addFutureBuildTasks(Collection<StashPullRequestResponseValue> pullRequests) {
+    StashPollingAction pollLog = trigger.getStashPollingAction();
+
     for (StashPullRequestResponseValue pullRequest : pullRequests) {
       Map<String, String> additionalParameters;
 
@@ -286,6 +306,8 @@ public class StashRepository {
       try {
         additionalParameters = getAdditionalParameters(pullRequest);
       } catch (StashApiException e) {
+        pollLog.log(
+            "Cannot read additional parameters for PR #{}, skipping", pullRequest.getId(), e);
         logger.log(
             Level.INFO,
             format(
@@ -301,6 +323,8 @@ public class StashRepository {
         try {
           deletePreviousBuildFinishedComments(pullRequest);
         } catch (StashApiException e) {
+          pollLog.log(
+              "Cannot delete old \"BuildFinished\" comments for PR #{}", pullRequest.getId(), e);
           logger.log(
               Level.INFO,
               format(
@@ -320,6 +344,10 @@ public class StashRepository {
       try {
         commentId = postBuildStartCommentTo(pullRequest);
       } catch (StashApiException e) {
+        pollLog.log(
+            "Cannot post \"BuildStarted\" comment for PR #{}, not building",
+            pullRequest.getId(),
+            e);
         logger.log(
             Level.INFO,
             format(
@@ -345,8 +373,19 @@ public class StashRepository {
               commentId,
               pullRequest.getVersion(),
               additionalParameters);
-      startJob(cause);
+
+      Queue.Item item = startJob(cause);
+      if (item != null) {
+        pollLog.log("Queued job for PR #{}", pullRequest.getId());
+      } else {
+        pollLog.log("Failed to queue job for PR #{}", pullRequest.getId());
+      }
     }
+
+    pollLog.log(
+        "{}: poll completed in {}",
+        logTimestamp(),
+        Util.getTimeSpanString(System.currentTimeMillis() - pollStartTime));
   }
 
   /**
@@ -665,7 +704,6 @@ public class StashRepository {
   }
 
   public void pollRepository() {
-    logger.info(format("Build Start (%s).", job.getName()));
     Collection<StashPullRequestResponseValue> targetPullRequests = getTargetPullRequests();
     addFutureBuildTasks(targetPullRequests);
   }

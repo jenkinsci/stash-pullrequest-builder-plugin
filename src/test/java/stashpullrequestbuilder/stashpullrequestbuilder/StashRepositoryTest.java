@@ -20,6 +20,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -85,6 +86,7 @@ public class StashRepositoryTest {
   public void before() throws Exception {
     project = spy(jenkinsRule.createFreeStyleProject());
     stashRepository = new StashRepository(project, trigger, stashApiClient);
+    lenient().when(trigger.getStashPollingAction()).thenReturn(new StashPollingAction(project));
 
     branch = new StashPullRequestResponseValueRepositoryBranch();
     branch.setName("feature/add-bloat");
