@@ -4,13 +4,13 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class StashPullRequestResponseValueRepositoryBranch {
-  private String Name;
+  private String name;
 
   public String getName() {
-    return Name;
+    return name;
   }
 
   public void setName(String name) {
-    Name = name;
+    this.name = name;
   }
 }
