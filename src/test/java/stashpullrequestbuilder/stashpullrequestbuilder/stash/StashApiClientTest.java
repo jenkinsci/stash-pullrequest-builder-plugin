@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.github.tomakehurst.wiremock.client.BasicCredentials;
@@ -129,6 +130,50 @@ public class StashApiClientTest {
     stubFor(get(pullRequestPath(0)).willReturn(jsonResponse("PullRequestListEmpty.json")));
 
     assertThat(client.getPullRequests(), is(empty()));
+  }
+
+  @Test
+  public void getPullRequests_gets_pull_request() throws Exception {
+    stubFor(get(pullRequestPath(0)).willReturn(jsonResponse("PullRequestListSingle.json")));
+
+    List<StashPullRequestResponseValue> pullRequests = client.getPullRequests();
+
+    assertThat(pullRequests, hasSize(1));
+    StashPullRequestResponseValue pullRequest = pullRequests.get(0);
+
+    assertThat(pullRequest.getClosed(), is(false));
+    assertThat(pullRequest.getCreatedDate(), is("2017/11/20 8:20:59"));
+    assertThat(pullRequest.getDescription(), is("Expand code to make it slower"));
+
+    // If "id" is present, the branch name is set from it, "refs/" and "heads/" is removed
+    assertThat(pullRequest.getFromRef().getBranch().getName(), is("abc"));
+    assertThat(pullRequest.getFromRef().getId(), is("refs/heads/abc"));
+
+    // "latestChangeset" overrides "latestCommit"
+    assertThat(pullRequest.getFromRef().getLatestChangeset(), is("13"));
+    assertThat(pullRequest.getFromRef().getLatestCommit(), is("13"));
+    assertThat(pullRequest.getFromRef().getCommit().getHash(), is("13"));
+
+    assertThat(pullRequest.getFromRef().getRepository().getRepository().getKey(), is("MyClone"));
+    assertThat(pullRequest.getFromRef().getRepository().getSlug(), is("~Me"));
+    assertThat(pullRequest.getId(), is("1001"));
+    assertThat(pullRequest.getLocked(), is(false));
+    assertThat(pullRequest.getState(), is("OPEN"));
+    assertThat(pullRequest.getTitle(), is("Add some bloat"));
+
+    // Branch name is read from "name" (not "Name") in absence of "id"
+    assertThat(pullRequest.getToRef().getBranch().getName(), is("master"));
+    assertThat(pullRequest.getToRef().getId(), is(nullValue()));
+
+    // "latestCommit" is used in absence of "latestChangeset"
+    assertThat(pullRequest.getToRef().getLatestChangeset(), is(nullValue()));
+    assertThat(pullRequest.getToRef().getLatestCommit(), is("ABCD"));
+    assertThat(pullRequest.getToRef().getCommit(), is(nullValue()));
+
+    assertThat(pullRequest.getToRef().getRepository().getRepository().getKey(), is("PROJ"));
+    assertThat(pullRequest.getToRef().getRepository().getSlug(), is("BigRepo"));
+    assertThat(pullRequest.getUpdatedDate(), is("2018/02/03 15:33:14"));
+    assertThat(pullRequest.getVersion(), is("3.11"));
   }
 
   @Test
