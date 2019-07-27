@@ -661,7 +661,11 @@ public class StashRepository {
   }
 
   private boolean isPhrasesContain(String text, String phrase) {
-    return text != null && text.toLowerCase().contains(phrase.trim().toLowerCase());
+    if (StringUtils.isEmpty(text)) {
+      return false;
+    }
+
+    return StringUtils.containsIgnoreCase(text, phrase.trim());
   }
 
   public void pollRepository() {
