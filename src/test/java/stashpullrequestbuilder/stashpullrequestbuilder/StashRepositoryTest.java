@@ -392,7 +392,7 @@ public class StashRepositoryTest {
     StashPullRequestComment comment = new StashPullRequestComment();
     comment.setCommentId(1);
     comment.setText("[*BuildFinished* **MyProject**] DEF2 into DEF1");
-    List<StashPullRequestComment> comments = Arrays.asList(comment);
+    List<StashPullRequestComment> comments = Collections.singletonList(comment);
 
     StashPullRequestComment response = new StashPullRequestComment();
     response.setCommentId(2);
