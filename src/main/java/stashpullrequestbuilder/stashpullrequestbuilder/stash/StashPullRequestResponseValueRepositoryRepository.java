@@ -2,6 +2,7 @@ package stashpullrequestbuilder.stashpullrequestbuilder.stash;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import javax.annotation.Nullable;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class StashPullRequestResponseValueRepositoryRepository {
@@ -26,8 +27,9 @@ public class StashPullRequestResponseValueRepositoryRepository {
     this.slug = slug;
   }
 
+  @Nullable
   public String getProjectName() {
-    if (this.project != null && project.getKey() != null) {
+    if (this.project != null) {
       return project.getKey();
     }
     return null;
