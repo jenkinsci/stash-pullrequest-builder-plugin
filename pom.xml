@@ -145,11 +145,6 @@
             <excludePackageNames>stashpullrequestbuilder.stashpullrequestbuilder.repackage.*</excludePackageNames>
           </configuration>
         </plugin>
-        <plugin>
-          <groupId>com.coveo</groupId>
-          <artifactId>fmt-maven-plugin</artifactId>
-          <version>2.8</version>
-        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -170,9 +165,20 @@
           <execution>
             <id>sortpom</id>
             <goals>
-              <goal>verify</goal>
+              <goal>sort</goal>
             </goals>
-            <phase>validate</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.coveo</groupId>
+        <artifactId>fmt-maven-plugin</artifactId>
+        <version>2.8</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>format</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>
@@ -181,51 +187,7 @@
 
   <profiles>
     <profile>
-      <id>verify-pom-sorting</id>
-      <activation>
-        <property>
-          <name>env.JENKINS_SERVER_COOKIE</name>
-        </property>
-      </activation>
-      <build>
-        <pluginManagement>
-          <plugins>
-            <plugin>
-              <groupId>com.github.ekryd.sortpom</groupId>
-              <artifactId>sortpom-maven-plugin</artifactId>
-              <configuration>
-                <verifyFail>Stop</verifyFail>
-              </configuration>
-            </plugin>
-          </plugins>
-        </pluginManagement>
-      </build>
-    </profile>
-    <profile>
-      <id>format-java</id>
-      <activation>
-        <property>
-          <name>!env.JENKINS_SERVER_COOKIE</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>com.coveo</groupId>
-            <artifactId>fmt-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>format</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>verify-java-formatting</id>
+      <id>ensure-no-formatting-changes</id>
       <activation>
         <property>
           <name>env.JENKINS_SERVER_COOKIE</name>
@@ -234,13 +196,15 @@
       <build>
         <plugins>
           <plugin>
-            <groupId>com.coveo</groupId>
-            <artifactId>fmt-maven-plugin</artifactId>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-scm-plugin</artifactId>
+            <version>1.11.2</version>
             <executions>
               <execution>
                 <goals>
-                  <goal>check</goal>
+                  <goal>check-local-modification</goal>
                 </goals>
+                <phase>verify</phase>
               </execution>
             </executions>
           </plugin>
