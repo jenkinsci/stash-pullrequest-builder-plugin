@@ -38,7 +38,7 @@
     <developerConnection>scm:git:ssh://git@github.com/jenkinsci/stash-pullrequest-builder-plugin.git</developerConnection>
     <tag>${scmTag}</tag>
     <url>https://github.com/jenkinsci/stash-pullrequest-builder-plugin</url>
-  </scm>
+   </scm>
 
   <distributionManagement>
     <repository>
