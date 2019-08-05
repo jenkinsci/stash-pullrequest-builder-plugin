@@ -83,8 +83,7 @@ public class StashApiClient {
 
   @Nonnull
   public List<StashPullRequestResponseValue> getPullRequests() throws StashApiException {
-    List<StashPullRequestResponseValue> pullRequestResponseValues =
-        new ArrayList<StashPullRequestResponseValue>();
+    List<StashPullRequestResponseValue> pullRequestResponseValues = new ArrayList<>();
     try {
       boolean isLastPage = false;
       int start = 0;
@@ -111,8 +110,7 @@ public class StashApiClient {
     try {
       boolean isLastPage = false;
       int start = 0;
-      List<StashPullRequestActivityResponse> commentResponses =
-          new ArrayList<StashPullRequestActivityResponse>();
+      List<StashPullRequestActivityResponse> commentResponses = new ArrayList<>();
       while (!isLastPage) {
         String response =
             getRequest(
@@ -443,7 +441,7 @@ public class StashApiClient {
   @Nonnull
   private List<StashPullRequestComment> extractComments(
       List<StashPullRequestActivityResponse> responses) {
-    List<StashPullRequestComment> comments = new ArrayList<StashPullRequestComment>();
+    List<StashPullRequestComment> comments = new ArrayList<>();
     for (StashPullRequestActivityResponse parsedResponse : responses) {
       for (StashPullRequestActivity a : parsedResponse.getPrValues()) {
         if (a != null && a.getComment() != null) {

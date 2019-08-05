@@ -131,7 +131,7 @@ public class StashBuildEnvironmentContributorTest {
   @Test
   public void populates_variables_for_FreeStyleProject() throws Exception {
     FreeStyleProject job = mock(FreeStyleProject.class);
-    Map<TriggerDescriptor, Trigger<?>> triggerMap = new HashMap<TriggerDescriptor, Trigger<?>>();
+    Map<TriggerDescriptor, Trigger<?>> triggerMap = new HashMap<>();
     StashBuildTrigger trigger = mock(StashBuildTrigger.class);
     TriggerDescriptor triggerDescriptor = StashBuildTrigger.descriptor;
     triggerMap.put(triggerDescriptor, trigger);
@@ -150,7 +150,7 @@ public class StashBuildEnvironmentContributorTest {
   @Test
   public void no_variables_for_FreeStyleProject_without_StashBuildTrigger() throws Exception {
     FreeStyleProject job = mock(FreeStyleProject.class);
-    Map<TriggerDescriptor, Trigger<?>> triggerMap = new HashMap<TriggerDescriptor, Trigger<?>>();
+    Map<TriggerDescriptor, Trigger<?>> triggerMap = new HashMap<>();
     Trigger<?> trigger = mock(Trigger.class);
     TriggerDescriptor triggerDescriptor = StashBuildTrigger.descriptor;
     triggerMap.put(triggerDescriptor, trigger);

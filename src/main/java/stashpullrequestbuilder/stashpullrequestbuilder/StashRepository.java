@@ -103,8 +103,7 @@ public class StashRepository {
     pollLog.resetLog();
     pollLog.log("{}: poll started", logTimestamp());
 
-    List<StashPullRequestResponseValue> targetPullRequests =
-        new ArrayList<StashPullRequestResponseValue>();
+    List<StashPullRequestResponseValue> targetPullRequests = new ArrayList<>();
 
     // Fetch "OPEN" pull requests from the server. Failure to get the list will
     // prevent builds from being scheduled. However, the call will be retried
@@ -157,13 +156,13 @@ public class StashRepository {
     if (parameterMatcher.find(0)) {
       String parameterName = parameterMatcher.group(1);
       String parameterValue = parameterMatcher.group(3);
-      return new AbstractMap.SimpleEntry<String, String>(parameterName, parameterValue);
+      return new AbstractMap.SimpleEntry<>(parameterName, parameterValue);
     }
     return null;
   }
 
   public static Map<String, String> getParametersFromContent(String content) {
-    Map<String, String> result = new TreeMap<String, String>();
+    Map<String, String> result = new TreeMap<>();
     String[] lines = content.split("\\r?\\n|\\r");
     for (String line : lines) {
       AbstractMap.SimpleEntry<String, String> parameter = getParameter(line);
@@ -188,7 +187,7 @@ public class StashRepository {
     // Process newest comments last so they can override older comments
     Collections.sort(comments);
 
-    Map<String, String> result = new TreeMap<String, String>();
+    Map<String, String> result = new TreeMap<>();
 
     for (StashPullRequestComment comment : comments) {
       String content = comment.getText();
@@ -247,7 +246,7 @@ public class StashRepository {
   }
 
   private List<ParameterValue> getParameters(StashCause cause) {
-    List<ParameterValue> values = new ArrayList<ParameterValue>();
+    List<ParameterValue> values = new ArrayList<>();
 
     ParametersDefinitionProperty definitionProperty =
         this.job.getProperty(ParametersDefinitionProperty.class);

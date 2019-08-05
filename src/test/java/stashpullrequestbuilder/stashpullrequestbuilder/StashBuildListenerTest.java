@@ -86,7 +86,7 @@ public class StashBuildListenerTest {
     StashRepository repository = mock(StashRepository.class);
     FreeStyleProject project = spy(jenkinsRule.createFreeStyleProject("TestProject"));
 
-    Map<TriggerDescriptor, Trigger<?>> triggerMap = new HashMap<TriggerDescriptor, Trigger<?>>();
+    Map<TriggerDescriptor, Trigger<?>> triggerMap = new HashMap<>();
     triggerMap.put(StashBuildTrigger.descriptor, trigger);
 
     when(build.getCause(eq(StashCause.class))).thenReturn(stashCause);
