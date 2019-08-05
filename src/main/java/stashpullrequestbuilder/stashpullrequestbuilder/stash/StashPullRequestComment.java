@@ -47,7 +47,6 @@ public class StashPullRequestComment implements Comparable<StashPullRequestComme
 
   @Override
   public int compareTo(StashPullRequestComment other) {
-    return Objects.compare(
-        this.commentId, other.commentId, (Integer a, Integer b) -> a.compareTo(b));
+    return Objects.compare(this.commentId, other.commentId, Integer::compareTo);
   }
 }
