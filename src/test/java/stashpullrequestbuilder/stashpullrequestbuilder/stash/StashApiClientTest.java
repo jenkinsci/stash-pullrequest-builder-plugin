@@ -438,7 +438,7 @@ public class StashApiClientTest {
             .withHeader("Content-Type", absent())
             .withHeader("Connection", equalTo("close"))
             .withHeader("X-Atlassian-Token", equalTo("no-check"))
-            .withRequestBody(equalTo("")));
+            .withRequestBody(absent()));
   }
 
   @Test
