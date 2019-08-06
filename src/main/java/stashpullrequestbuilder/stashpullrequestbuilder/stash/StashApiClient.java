@@ -440,7 +440,7 @@ public class StashApiClient {
 
   @Nonnull
   private List<StashPullRequestComment> extractComments(
-      List<StashPullRequestActivityResponse> responses) {
+      Iterable<StashPullRequestActivityResponse> responses) {
     List<StashPullRequestComment> comments = new ArrayList<>();
     for (StashPullRequestActivityResponse parsedResponse : responses) {
       for (StashPullRequestActivity a : parsedResponse.getPrValues()) {
