@@ -5,8 +5,6 @@ import static java.lang.String.format;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
 import java.lang.invoke.MethodHandles;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
@@ -22,7 +20,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import org.apache.commons.io.IOUtils;
+import org.apache.http.Consts;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.auth.AuthenticationException;
@@ -41,6 +40,7 @@ import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.http.util.EntityUtils;
 
 /** Created by Nathan McCarthy */
 public class StashApiClient {
@@ -201,6 +201,20 @@ public class StashApiClient {
     return httpClientBuilder.build();
   }
 
+  @Nonnull
+  private static String entityAsString(HttpResponse httpResponse) throws StashApiException {
+    HttpEntity entity = httpResponse.getEntity();
+    if (entity == null) {
+      throw new StashApiException("No HTTP entity found in response");
+    }
+
+    try {
+      return EntityUtils.toString(entity, Consts.UTF_8);
+    } catch (IOException e) {
+      throw new StashApiException("Cannot decode HTTP response contents", e);
+    }
+  }
+
   private String getRequest(String path) throws StashApiException {
     logger.log(Level.FINEST, "PR-GET-REQUEST:" + path);
     CloseableHttpClient client = getHttpClient();
@@ -229,7 +243,6 @@ public class StashApiClient {
 
                 @Override
                 public String call() throws StashApiException, IOException {
-                  String response = null;
                   HttpResponse httpResponse = client.execute(request);
                   int responseCode = httpResponse.getStatusLine().getStatusCode();
                   if (!validResponseCode(responseCode)) {
@@ -243,12 +256,7 @@ public class StashApiClient {
                             + httpResponse.getStatusLine().getReasonPhrase());
                   }
 
-                  InputStream responseBodyAsStream = httpResponse.getEntity().getContent();
-                  StringWriter stringWriter = new StringWriter();
-                  IOUtils.copy(responseBodyAsStream, stringWriter, "UTF-8");
-                  response = stringWriter.toString();
-
-                  return response;
+                  return entityAsString(httpResponse);
                 }
 
                 public Callable<String> init(CloseableHttpClient client, HttpGet request) {
@@ -371,7 +379,6 @@ public class StashApiClient {
 
                 @Override
                 public String call() throws StashApiException, IOException {
-                  String response = "";
                   HttpResponse httpResponse = client.execute(request);
                   int responseCode = httpResponse.getStatusLine().getStatusCode();
                   if (!validResponseCode(responseCode)) {
@@ -385,13 +392,7 @@ public class StashApiClient {
                             + httpResponse.getStatusLine().getReasonPhrase());
                   }
 
-                  InputStream responseBodyAsStream = httpResponse.getEntity().getContent();
-                  StringWriter stringWriter = new StringWriter();
-                  IOUtils.copy(responseBodyAsStream, stringWriter, "UTF-8");
-                  response = stringWriter.toString();
-                  logger.log(Level.FINEST, "API Request Response: " + response);
-
-                  return response;
+                  return entityAsString(httpResponse);
                 }
 
                 public Callable<String> init(CloseableHttpClient client, HttpPost request) {
