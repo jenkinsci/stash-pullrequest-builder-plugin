@@ -254,7 +254,7 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
 
   @Override
   public void run() {
-    if (job == null) {
+    if (job == null || stashRepository == null) {
       logger.info("Not ready to run.");
       return;
     }
