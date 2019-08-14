@@ -19,7 +19,6 @@ import hudson.triggers.Trigger;
 import hudson.triggers.TriggerDescriptor;
 import hudson.util.ListBoxModel;
 import java.lang.invoke.MethodHandles;
-import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.ParameterizedJobMixIn.ParameterizedJob;
@@ -235,12 +234,16 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
   public void start(Job<?, ?> job, boolean newInstance) {
     super.start(job, newInstance);
 
+    if (job == null) {
+      logger.log(Level.SEVERE, "Can't start trigger: job is null");
+      return;
+    }
+
     if (stashPollingAction == null) {
       stashPollingAction = new StashPollingAction(job);
     }
 
     try {
-      Objects.requireNonNull(job, "job is null");
       StashApiClient stashApiClient =
           new StashApiClient(
               getStashHost(),
@@ -251,7 +254,7 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
               getIgnoreSsl());
 
       this.stashRepository = new StashRepository(job, this, stashApiClient);
-    } catch (NullPointerException e) {
+    } catch (Throwable e) {
       logger.log(Level.SEVERE, "Can't start trigger", e);
       stashPollingAction.log("Can't start trigger", e);
     }
