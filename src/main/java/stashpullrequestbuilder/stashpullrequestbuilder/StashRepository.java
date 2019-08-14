@@ -71,26 +71,11 @@ public class StashRepository {
 
   private long pollStartTime;
 
-  public StashRepository(@Nonnull Job<?, ?> job, @Nonnull StashBuildTrigger trigger) {
-    this(job, trigger, makeStashApiClient(trigger));
-  }
-
-  // Visible for unit tests
-  StashRepository(
+  public StashRepository(
       @Nonnull Job<?, ?> job, @Nonnull StashBuildTrigger trigger, StashApiClient client) {
     this.job = job;
     this.trigger = trigger;
     this.client = client;
-  }
-
-  private static StashApiClient makeStashApiClient(StashBuildTrigger trigger) {
-    return new StashApiClient(
-        trigger.getStashHost(),
-        trigger.getUsername(),
-        trigger.getPassword(),
-        trigger.getProjectCode(),
-        trigger.getRepositoryName(),
-        trigger.getIgnoreSsl());
   }
 
   private static String logTimestamp() {

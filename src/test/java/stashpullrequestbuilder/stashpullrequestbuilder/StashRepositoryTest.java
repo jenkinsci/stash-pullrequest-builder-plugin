@@ -1,13 +1,5 @@
 package stashpullrequestbuilder.stashpullrequestbuilder;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.verify;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import static java.lang.String.format;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.arrayWithSize;
@@ -26,7 +18,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import hudson.model.BooleanParameterDefinition;
 import hudson.model.FileParameterDefinition;
 import hudson.model.FreeStyleProject;
@@ -66,7 +57,6 @@ public class StashRepositoryTest {
 
   @Rule public JenkinsRule jenkinsRule = new JenkinsRule();
   @Rule public MockitoRule rule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
-  @Rule public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
 
   private StashRepository stashRepository;
 
@@ -564,28 +554,5 @@ public class StashRepositoryTest {
     stashRepository.addFutureBuildTasks(pullRequestList);
 
     assertThat(Jenkins.getInstance().getQueue().getItems(), is(emptyArray()));
-  }
-
-  @Test
-  public void constructor_initializes_StashApiClient() throws Exception {
-    String projectName = "PROJ";
-    String repositoryName = "Repo";
-
-    when(trigger.getStashHost()).thenReturn(wireMockRule.baseUrl());
-    when(trigger.getUsername()).thenReturn("User");
-    when(trigger.getPassword()).thenReturn("Password");
-    when(trigger.getProjectCode()).thenReturn(projectName);
-    when(trigger.getRepositoryName()).thenReturn(repositoryName);
-    when(trigger.getIgnoreSsl()).thenReturn(false);
-
-    stubFor(
-        get(format(
-                "/rest/api/1.0/projects/%s/repos/%s/pull-requests?start=0",
-                projectName, repositoryName))
-            .willReturn(okJson("{\"isLastPage\": true, \"values\": []}")));
-
-    StashRepository newStashRepository = new StashRepository(project, trigger);
-    assertThat(newStashRepository.getTargetPullRequests(), is(empty()));
-    verify(getRequestedFor(anyUrl()));
   }
 }

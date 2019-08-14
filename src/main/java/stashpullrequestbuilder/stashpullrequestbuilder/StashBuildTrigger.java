@@ -29,6 +29,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient;
 
 /** Created by Nathan McCarthy */
 public class StashBuildTrigger extends Trigger<Job<?, ?>> {
@@ -240,8 +241,16 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
 
     try {
       Objects.requireNonNull(job, "job is null");
-      this.stashRepository = new StashRepository(job, this);
+      StashApiClient stashApiClient =
+          new StashApiClient(
+              getStashHost(),
+              getUsername(),
+              getPassword(),
+              getProjectCode(),
+              getRepositoryName(),
+              getIgnoreSsl());
 
+      this.stashRepository = new StashRepository(job, this, stashApiClient);
     } catch (NullPointerException e) {
       logger.log(Level.SEVERE, "Can't start trigger", e);
       stashPollingAction.log("Can't start trigger", e);
