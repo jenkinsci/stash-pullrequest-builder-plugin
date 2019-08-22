@@ -253,7 +253,7 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
               getRepositoryName(),
               getIgnoreSsl());
 
-      this.stashRepository = new StashRepository(job, this, stashApiClient);
+      this.stashRepository = new StashRepository(job, this, stashApiClient, stashPollingAction);
     } catch (Throwable e) {
       logger.log(Level.SEVERE, "Can't start trigger", e);
       stashPollingAction.log("Can't start trigger", e);

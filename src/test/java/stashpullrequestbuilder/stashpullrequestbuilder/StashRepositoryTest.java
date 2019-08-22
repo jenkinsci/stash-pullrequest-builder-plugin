@@ -4,15 +4,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.emptyArray;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -62,6 +63,7 @@ public class StashRepositoryTest {
 
   private StashCause cause;
   private FreeStyleProject project;
+  private StashPollingAction pollLog;
   private StashPullRequestResponseValue pullRequest;
   private StashPullRequestResponseValueRepository repository;
   private StashPullRequestResponseValueRepositoryBranch branch;
@@ -75,8 +77,8 @@ public class StashRepositoryTest {
   @Before
   public void before() throws Exception {
     project = spy(jenkinsRule.createFreeStyleProject());
-    stashRepository = new StashRepository(project, trigger, stashApiClient);
-    lenient().when(trigger.getStashPollingAction()).thenReturn(new StashPollingAction(project));
+    pollLog = new StashPollingAction(project);
+    stashRepository = new StashRepository(project, trigger, stashApiClient, pollLog);
 
     branch = new StashPullRequestResponseValueRepositoryBranch();
     branch.setName("feature/add-bloat");
@@ -411,6 +413,22 @@ public class StashRepositoryTest {
     stashRepository.addFutureBuildTasks(pullRequestList);
 
     assertThat(Jenkins.getInstance().getQueue().getItems(), is(emptyArray()));
+  }
+
+  @Test
+  public void pollRepository_logs_time_and_stats() throws Exception {
+    when(stashApiClient.getPullRequests()).thenReturn(Collections.emptyList());
+
+    stashRepository.pollRepository();
+
+    assertThat(Jenkins.getInstance().getQueue().getItems(), is(emptyArray()));
+
+    String[] logLines = pollLog.toString().split("\\r?\\n|\\r");
+    assertThat(logLines.length, is(equalTo(4)));
+    assertThat(logLines[0], containsString(": poll started"));
+    assertThat(logLines[1], is(equalTo("Number of open pull requests: 0")));
+    assertThat(logLines[2], is(equalTo("Number of pull requests to be built: 0")));
+    assertThat(logLines[3], containsString(": poll completed in "));
   }
 
   @Test

@@ -69,14 +69,17 @@ public class StashRepository {
   private Job<?, ?> job;
   private StashBuildTrigger trigger;
   private StashApiClient client;
-
-  private long pollStartTime;
+  private StashPollingAction pollLog;
 
   public StashRepository(
-      @Nonnull Job<?, ?> job, @Nonnull StashBuildTrigger trigger, StashApiClient client) {
+      @Nonnull Job<?, ?> job,
+      @Nonnull StashBuildTrigger trigger,
+      StashApiClient client,
+      StashPollingAction pollLog) {
     this.job = job;
     this.trigger = trigger;
     this.client = client;
+    this.pollLog = pollLog;
   }
 
   private static String logTimestamp() {
@@ -84,11 +87,6 @@ public class StashRepository {
   }
 
   public Collection<StashPullRequestResponseValue> getTargetPullRequests() {
-    pollStartTime = System.currentTimeMillis();
-    StashPollingAction pollLog = trigger.getStashPollingAction();
-    pollLog.resetLog();
-    pollLog.log("{}: poll started", logTimestamp());
-
     List<StashPullRequestResponseValue> targetPullRequests = new ArrayList<>();
 
     // Fetch "OPEN" pull requests from the server. Failure to get the list will
@@ -284,8 +282,6 @@ public class StashRepository {
   }
 
   public void addFutureBuildTasks(Collection<StashPullRequestResponseValue> pullRequests) {
-    StashPollingAction pollLog = trigger.getStashPollingAction();
-
     for (StashPullRequestResponseValue pullRequest : pullRequests) {
       Map<String, String> additionalParameters;
 
@@ -370,11 +366,6 @@ public class StashRepository {
         pollLog.log("Failed to queue job for PR #{}", pullRequest.getId());
       }
     }
-
-    pollLog.log(
-        "{}: poll completed in {}",
-        logTimestamp(),
-        Util.getTimeSpanString(System.currentTimeMillis() - pollStartTime));
   }
 
   /**
@@ -697,7 +688,16 @@ public class StashRepository {
   }
 
   public void pollRepository() {
+    long pollStartTime = System.currentTimeMillis();
+    pollLog.resetLog();
+    pollLog.log("{}: poll started", logTimestamp());
+
     Collection<StashPullRequestResponseValue> targetPullRequests = getTargetPullRequests();
     addFutureBuildTasks(targetPullRequests);
+
+    pollLog.log(
+        "{}: poll completed in {}",
+        logTimestamp(),
+        Util.getTimeSpanString(System.currentTimeMillis() - pollStartTime));
   }
 }
