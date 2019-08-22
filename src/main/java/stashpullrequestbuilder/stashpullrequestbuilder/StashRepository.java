@@ -529,16 +529,15 @@ public class StashRepository {
     boolean shouldBuild = true;
 
     if (isSkipBuild(pullRequest.getTitle())) {
-      logger.info("Skipping PR: " + pullRequest.getId() + " as title contained skip phrase");
+      pollLog.log("Not building PR #{}, its title contains the skip phrase", pullRequest.getId());
       return false;
     }
 
     if (!isForTargetBranch(pullRequest)) {
-      logger.info(
-          "Skipping PR: "
-              + pullRequest.getId()
-              + " as targeting branch: "
-              + pullRequest.getToRef().getBranch().getName());
+      pollLog.log(
+          "Not building PR #{} as it targets branch {}",
+          pullRequest.getId(),
+          pullRequest.getToRef().getBranch().getName());
       return false;
     }
 
@@ -547,7 +546,7 @@ public class StashRepository {
     // the pull request in this cycle.
     try {
       if (!isPullRequestMergeable(pullRequest)) {
-        logger.info("Skipping PR: " + pullRequest.getId() + " as cannot be merged");
+        pollLog.log("Not building PR #{} as it cannot be merged", pullRequest.getId());
         return false;
       }
     } catch (StashApiException e) {
