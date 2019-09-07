@@ -13,7 +13,7 @@
 
   <name>Stash Pullrequest Builder Plugin</name>
   <description>This plugin builds Stash pull requests and posts the build results on Stash</description>
-  <url>https://wiki.jenkins.io/display/JENKINS/Stash+pullrequest+builder+plugin</url>
+  <url>https://github.com/jenkinsci/stash-pullrequest-builder-plugin</url>
 
   <developers>
     <developer>
