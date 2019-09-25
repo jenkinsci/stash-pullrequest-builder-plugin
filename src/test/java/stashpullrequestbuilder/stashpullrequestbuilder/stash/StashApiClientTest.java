@@ -93,6 +93,12 @@ public class StashApiClientTest {
         projectName, repositoryName, pullRequestId);
   }
 
+  private String pullRequestWatchPath() {
+    return format(
+        "/rest/api/1.0/projects/%s/repos/%s/pull-requests/%s/watch",
+        projectName, repositoryName, pullRequestId);
+  }
+
   private String pullRequestMergeStatusPath() {
     return format(
         "/rest/api/1.0/projects/%s/repos/%s/pull-requests/%s/merge",
@@ -323,6 +329,7 @@ public class StashApiClientTest {
         post(pullRequestPostCommentPath())
             .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
             .willReturn(jsonResponse("PostPullRequestComment.json")));
+    stubFor(delete(pullRequestWatchPath()).willReturn(noContent()));
 
     StashPullRequestComment comment = client.postPullRequestComment(pullRequestId, "Some comment");
     assertThat(comment.getCommentId(), is(234));

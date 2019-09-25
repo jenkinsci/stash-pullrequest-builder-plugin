@@ -150,11 +150,18 @@ public class StashApiClient {
       throws StashApiException {
     String path = pullRequestPath(pullRequestId) + "/comments";
     String response = postRequest(path, comment);
+    stopWatchingPullRequest(pullRequestId);
     try {
       return parseSingleCommentJson(response);
     } catch (IOException e) {
       throw new StashApiException("Cannot parse reply after comment posting", e);
     }
+  }
+
+  public void stopWatchingPullRequest(String pullRequestId)
+      throws StashApiException {
+    String path = pullRequestPath(pullRequestId) + "/watch";
+    deleteRequest(path);
   }
 
   @Nullable
