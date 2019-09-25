@@ -158,8 +158,7 @@ public class StashApiClient {
     }
   }
 
-  public void stopWatchingPullRequest(String pullRequestId)
-      throws StashApiException {
+  public void stopWatchingPullRequest(String pullRequestId) throws StashApiException {
     String path = pullRequestPath(pullRequestId) + "/watch";
     deleteRequest(path);
   }
