@@ -551,6 +551,7 @@ public class StashRepository {
         return false;
       }
     } catch (StashApiException e) {
+      pollLog.log("Cannot determine if PR #{} can be merged, not building", pullRequest.getId(), e);
       logger.log(
           Level.INFO,
           format(
@@ -582,6 +583,7 @@ public class StashRepository {
     try {
       comments = client.getPullRequestComments(owner, repositoryName, id);
     } catch (StashApiException e) {
+      pollLog.log("Cannot read comments for PR #{}, not building", pullRequest.getId(), e);
       logger.log(Level.INFO, format("%s: cannot read pull request comments", job.getFullName()), e);
       return false;
     }
