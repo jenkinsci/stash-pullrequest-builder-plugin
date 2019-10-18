@@ -13,11 +13,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
@@ -46,10 +41,6 @@ import org.apache.http.util.EntityUtils;
 
 /** Created by Nathan McCarthy */
 public class StashApiClient {
-
-  // Request timeout: maximum time between sending an HTTP request and receiving
-  // a response to it from the server.
-  private static final int HTTP_REQUEST_TIMEOUT_SECONDS = 60;
 
   // Connection timeout: maximum time for connecting to the HTTP server.
   private static final int HTTP_CONNECTION_TIMEOUT_SECONDS = 15;
@@ -247,49 +238,19 @@ public class StashApiClient {
     String response = null;
     try {
       request.addHeader(new BasicScheme().authenticate(credentials, request, null));
+      HttpResponse httpResponse = client.execute(request);
+      int responseCode = httpResponse.getStatusLine().getStatusCode();
+      if (!validResponseCode(responseCode)) {
+        logger.log(Level.SEVERE, "Failing to get response from Stash PR GET" + request.getURI());
+        throw new StashApiException(
+            "Didn't get a 200 response from Stash PR GET! Response; '"
+                + responseCode
+                + "' with message; "
+                + httpResponse.getStatusLine().getReasonPhrase());
+      }
 
-      // Run the HTTP request in a future task so we have the opportunity
-      // to cancel it if it gets hung up; which is possible if stuck at
-      // socket native layer.  see issue JENKINS-30558
-      FutureTask<String> httpTask =
-          new FutureTask<String>(
-              new Callable<String>() {
-
-                private CloseableHttpClient client;
-                private HttpGet request;
-
-                @Override
-                public String call() throws StashApiException, IOException {
-                  HttpResponse httpResponse = client.execute(request);
-                  int responseCode = httpResponse.getStatusLine().getStatusCode();
-                  if (!validResponseCode(responseCode)) {
-                    logger.log(
-                        Level.SEVERE,
-                        "Failing to get response from Stash PR GET" + request.getURI());
-                    throw new StashApiException(
-                        "Didn't get a 200 response from Stash PR GET! Response; '"
-                            + responseCode
-                            + "' with message; "
-                            + httpResponse.getStatusLine().getReasonPhrase());
-                  }
-
-                  return entityAsString(httpResponse);
-                }
-
-                public Callable<String> init(CloseableHttpClient client, HttpGet request) {
-                  this.client = client;
-                  this.request = request;
-                  return this;
-                }
-              }.init(client, request));
-      Thread thread = new Thread(httpTask);
-      thread.start();
-      response = httpTask.get(HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-
-    } catch (TimeoutException e) {
-      request.abort();
-      throw new StashApiException("Timeout in GET request", e);
-    } catch (AuthenticationException | ExecutionException | InterruptedException e) {
+      response = entityAsString(httpResponse);
+    } catch (AuthenticationException | IOException e) {
       throw new StashApiException("Exception in GET request", e);
     } finally {
       request.releaseConnection();
@@ -310,38 +271,8 @@ public class StashApiClient {
     int response = -1;
     try {
       request.addHeader(new BasicScheme().authenticate(credentials, request, null));
-
-      // Run the HTTP request in a future task so we have the opportunity
-      // to cancel it if it gets hung up; which is possible if stuck at
-      // socket native layer.  see issue JENKINS-30558
-      FutureTask<Integer> httpTask =
-          new FutureTask<Integer>(
-              new Callable<Integer>() {
-
-                private CloseableHttpClient client;
-                private HttpDelete request;
-
-                @Override
-                public Integer call() throws StashApiException, IOException {
-                  int response = -1;
-                  response = client.execute(request).getStatusLine().getStatusCode();
-                  return response;
-                }
-
-                public Callable<Integer> init(CloseableHttpClient client, HttpDelete request) {
-                  this.client = client;
-                  this.request = request;
-                  return this;
-                }
-              }.init(client, request));
-      Thread thread = new Thread(httpTask);
-      thread.start();
-      response = httpTask.get(HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-
-    } catch (TimeoutException e) {
-      request.abort();
-      throw new StashApiException("Timeout in DELETE request", e);
-    } catch (AuthenticationException | ExecutionException | InterruptedException e) {
+      response = client.execute(request).getStatusLine().getStatusCode();
+    } catch (AuthenticationException | IOException e) {
       throw new StashApiException("Exception in DELETE request", e);
     } finally {
       request.releaseConnection();
@@ -378,49 +309,19 @@ public class StashApiClient {
     String response = "";
     try {
       request.addHeader(new BasicScheme().authenticate(credentials, request, null));
+      HttpResponse httpResponse = client.execute(request);
+      int responseCode = httpResponse.getStatusLine().getStatusCode();
+      if (!validResponseCode(responseCode)) {
+        logger.log(Level.SEVERE, "Failing to get response from Stash PR POST" + request.getURI());
+        throw new StashApiException(
+            "Didn't get a 200 response from Stash PR POST! Response; '"
+                + responseCode
+                + "' with message; "
+                + httpResponse.getStatusLine().getReasonPhrase());
+      }
 
-      // Run the HTTP request in a future task so we have the opportunity
-      // to cancel it if it gets hung up; which is possible if stuck at
-      // socket native layer.  see issue JENKINS-30558
-      FutureTask<String> httpTask =
-          new FutureTask<String>(
-              new Callable<String>() {
-
-                private CloseableHttpClient client;
-                private HttpPost request;
-
-                @Override
-                public String call() throws StashApiException, IOException {
-                  HttpResponse httpResponse = client.execute(request);
-                  int responseCode = httpResponse.getStatusLine().getStatusCode();
-                  if (!validResponseCode(responseCode)) {
-                    logger.log(
-                        Level.SEVERE,
-                        "Failing to get response from Stash PR POST" + request.getURI());
-                    throw new StashApiException(
-                        "Didn't get a 200 response from Stash PR POST! Response; '"
-                            + responseCode
-                            + "' with message; "
-                            + httpResponse.getStatusLine().getReasonPhrase());
-                  }
-
-                  return entityAsString(httpResponse);
-                }
-
-                public Callable<String> init(CloseableHttpClient client, HttpPost request) {
-                  this.client = client;
-                  this.request = request;
-                  return this;
-                }
-              }.init(client, request));
-      Thread thread = new Thread(httpTask);
-      thread.start();
-      response = httpTask.get(HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-
-    } catch (TimeoutException e) {
-      request.abort();
-      throw new StashApiException("Timeout in POST request", e);
-    } catch (AuthenticationException | ExecutionException | InterruptedException e) {
+      response = entityAsString(httpResponse);
+    } catch (AuthenticationException | IOException e) {
       throw new StashApiException("Exception in POST request", e);
     } finally {
       request.releaseConnection();
