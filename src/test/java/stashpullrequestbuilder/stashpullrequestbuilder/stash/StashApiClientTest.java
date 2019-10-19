@@ -52,7 +52,10 @@ import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient.Stas
 public class StashApiClientTest {
 
   @Rule public ExpectedException expectedException = ExpectedException.none();
-  @Rule public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicHttpsPort());
+
+  @Rule
+  public WireMockRule wireMockRule =
+      new WireMockRule(wireMockConfig().dynamicPort().dynamicHttpsPort());
 
   private StashApiClient client;
 
