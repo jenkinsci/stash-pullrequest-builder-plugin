@@ -176,7 +176,7 @@ public class StashRepository {
 
     for (StashPullRequestComment comment : comments) {
       String content = comment.getText();
-      if (content == null || content.isEmpty()) {
+      if (StringUtils.isEmpty(content)) {
         continue;
       }
 
@@ -510,7 +510,7 @@ public class StashRepository {
 
     for (StashPullRequestComment comment : comments) {
       String content = comment.getText();
-      if (content == null || content.isEmpty()) {
+      if (StringUtils.isEmpty(content)) {
         continue;
       }
 
@@ -595,7 +595,7 @@ public class StashRepository {
 
     for (StashPullRequestComment comment : comments) {
       String content = comment.getText();
-      if (content == null || content.isEmpty()) {
+      if (StringUtils.isEmpty(content)) {
         continue;
       }
 

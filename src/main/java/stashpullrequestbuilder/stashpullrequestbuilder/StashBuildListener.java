@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import jenkins.model.JenkinsLocationConfiguration;
 import jenkins.model.ParameterizedJobMixIn;
+import org.apache.commons.lang.StringUtils;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient.StashApiException;
 
 /** Created by Nathan McCarthy */
@@ -97,7 +98,7 @@ public class StashBuildListener extends RunListener<Run<?, ?>> {
               ? comments.getBuildSuccessfulComment()
               : comments.getBuildFailedComment();
 
-      if (buildComment != null && !buildComment.isEmpty()) {
+      if (StringUtils.isNotEmpty(buildComment)) {
         String expandedComment;
         try {
           expandedComment = Util.fixEmptyAndTrim(run.getEnvironment(listener).expand(buildComment));
