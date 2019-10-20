@@ -275,7 +275,7 @@ public class StashRepository {
     }
 
     return ParameterizedJobMixIn.scheduleBuild2(
-        job, -1, new CauseAction(cause), new ParametersAction(values));
+        job, -1, new CauseAction(cause), new StashQueueAction(), new ParametersAction(values));
   }
 
   public void addFutureBuildTasks(Collection<StashPullRequestResponseValue> pullRequests) {
