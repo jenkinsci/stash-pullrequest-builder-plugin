@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -442,10 +443,12 @@ public class StashRepository {
    *
    * @param pullRequestId pull request ID
    * @param version pull request version
-   * @return true if the merge succeeds, false if the server reports an error
+   * @return empty optional if the merge succeeds, server response otherwise
    * @throws StashApiException if cannot communicate to the server
    */
-  public boolean mergePullRequest(String pullRequestId, String version) throws StashApiException {
+  @Nonnull
+  public Optional<String> mergePullRequest(String pullRequestId, String version)
+      throws StashApiException {
     return this.client.mergePullRequest(pullRequestId, version);
   }
 

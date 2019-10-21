@@ -10,7 +10,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.noContent;
 import static com.github.tomakehurst.wiremock.client.WireMock.notFound;
-import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -44,7 +43,6 @@ import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient.Stas
  * Known issues:
  *
  * deletePullRequestComment() gives no indication whether the call has succeeded
- * mergePullRequest() throws on 409 Conflict instead of returning false as apparently intended
  * There are no checks whether the HTTP code indicates an error for the specific request
  * POST requests throw on 204 No Content
  * Timeouts are not testable without very slow tests, as the timings are not configurable
@@ -452,9 +450,11 @@ public class StashApiClientTest {
 
   @Test
   public void mergePullRequest_sends_merge_request() throws Exception {
-    stubFor(post(pullRequestMergePath(mergeVersion)).willReturn(okJson("{}")));
+    stubFor(
+        post(pullRequestMergePath(mergeVersion))
+            .willReturn(jsonResponse("PullRequestMerged.json")));
 
-    assertThat(client.mergePullRequest(pullRequestId, mergeVersion), is(true));
+    assertThat(client.mergePullRequest(pullRequestId, mergeVersion).isPresent(), is(false));
 
     verify(
         postRequestedFor(anyUrl())
@@ -478,15 +478,12 @@ public class StashApiClientTest {
   }
 
   @Test
-  public void mergePullRequest_throws_on_conflict() throws Exception {
-    stubFor(any(anyUrl()).willReturn(aResponse().withStatus(409)));
+  public void mergePullRequest_returns_error_on_conflict() throws Exception {
+    stubFor(any(anyUrl()).willReturn(jsonResponse("PullRequestMergeFailed.json").withStatus(409)));
 
     assertThat(
-        assertThrows(
-            StashApiException.class, () -> client.mergePullRequest(pullRequestId, mergeVersion)),
-        allOf(
-            hasProperty("cause", is(instanceOf(ExecutionException.class))),
-            hasProperty("message", containsString("Exception in POST request"))));
+        client.mergePullRequest(pullRequestId, mergeVersion).orElse(""),
+        containsString("A detailed error message."));
   }
 
   @Test

@@ -13,6 +13,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -169,10 +170,26 @@ public class StashApiClient {
     }
   }
 
-  public boolean mergePullRequest(String pullRequestId, String version) throws StashApiException {
+  @Nonnull
+  public Optional<String> mergePullRequest(String pullRequestId, String version)
+      throws StashApiException {
     String path = pullRequestPath(pullRequestId) + "/merge?version=" + version;
     String response = postRequest(path, null);
-    return !response.equals(Integer.toString(HttpStatus.SC_CONFLICT));
+
+    try {
+      StashPullRequestResponseValue parsedResponse =
+          mapper.readValue(response, StashPullRequestResponseValue.class);
+
+      if ("MERGED".equals(parsedResponse.getState())) {
+        // Successful merge
+        return Optional.empty();
+      }
+    } catch (IOException e) {
+      throw new StashApiException("Cannot parse merge response", e);
+    }
+
+    // Return the whole response for the purpose of logging
+    return Optional.ofNullable(response);
   }
 
   private CloseableHttpClient getHttpClient() throws StashApiException {
@@ -423,7 +440,8 @@ public class StashApiClient {
         || responseCode == HttpStatus.SC_ACCEPTED
         || responseCode == HttpStatus.SC_CREATED
         || responseCode == HttpStatus.SC_NO_CONTENT
-        || responseCode == HttpStatus.SC_RESET_CONTENT;
+        || responseCode == HttpStatus.SC_RESET_CONTENT
+        || responseCode == HttpStatus.SC_CONFLICT;
   }
 
   private StashPullRequestResponse parsePullRequestJson(String response) throws IOException {

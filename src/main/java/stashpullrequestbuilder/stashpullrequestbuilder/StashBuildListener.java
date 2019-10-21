@@ -12,6 +12,7 @@ import hudson.model.listeners.RunListener;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
+import java.util.Optional;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import jenkins.model.JenkinsLocationConfiguration;
@@ -128,9 +129,10 @@ public class StashBuildListener extends RunListener<Run<?, ?>> {
     // them to the build log as well.
     if (trigger.getMergeOnSuccess() && run.getResult() == Result.SUCCESS) {
       try {
-        boolean mergeStat =
+        Optional<String> mergeError =
             repository.mergePullRequest(cause.getPullRequestId(), cause.getPullRequestVersion());
-        if (mergeStat == true) {
+
+        if (!mergeError.isPresent()) {
           buildLogger.println(
               format(
                   "Successfully merged pull request %s (%s) to branch %s",
@@ -138,8 +140,9 @@ public class StashBuildListener extends RunListener<Run<?, ?>> {
         } else {
           buildLogger.println(
               format(
-                  "Failed to merge pull request %s (%s) to branch %s, it may be out of date",
+                  "Failed to merge pull request %s (%s) to branch %s, error message:",
                   cause.getPullRequestId(), cause.getSourceBranch(), cause.getTargetBranch()));
+          buildLogger.println(mergeError.get());
         }
       } catch (StashApiException e) {
         buildLogger.println(

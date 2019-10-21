@@ -28,6 +28,7 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -188,7 +189,7 @@ public class StashBuildListenerTest {
     StashRepository repository = setup_onCompleted(true);
     when(repository.mergePullRequest(
             eq(stashCause.getPullRequestId()), eq(stashCause.getPullRequestVersion())))
-        .thenReturn(true);
+        .thenReturn(Optional.empty());
 
     stashBuildListener.onCompleted(build, taskListener);
 
@@ -203,19 +204,22 @@ public class StashBuildListenerTest {
   @Test
   public void onCompleted_writes_to_build_log_on_merge_failure() throws Exception {
     StashRepository repository = setup_onCompleted(true);
+    String errorResponse = "{\"errors\":[{\"message\":\"conflict\"}]}";
+
     when(repository.mergePullRequest(
             eq(stashCause.getPullRequestId()), eq(stashCause.getPullRequestVersion())))
-        .thenReturn(false);
+        .thenReturn(Optional.of(errorResponse));
 
     stashBuildListener.onCompleted(build, taskListener);
 
     String buildLog = new String(buildLogBuffer.toByteArray(), StandardCharsets.UTF_8);
     String[] buildLogLines = buildLog.split("\\r?\\n|\\r");
-    assertThat(buildLogLines.length, is(1));
+    assertThat(buildLogLines.length, is(2));
     assertThat(
         buildLogLines[0],
         is(
-            "Failed to merge pull request PullRequestId (SourceBranch) to branch TargetBranch, it may be out of date"));
+            "Failed to merge pull request PullRequestId (SourceBranch) to branch TargetBranch, error message:"));
+    assertThat(buildLogLines[1], is(errorResponse));
   }
 
   @Test
