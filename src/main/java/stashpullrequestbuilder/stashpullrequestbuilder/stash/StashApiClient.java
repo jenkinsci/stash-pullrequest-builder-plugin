@@ -245,15 +245,13 @@ public class StashApiClient {
     request.addHeader("Connection", "close");
 
     String response = null;
-    FutureTask<String> httpTask = null;
-    Thread thread;
     try {
       request.addHeader(new BasicScheme().authenticate(credentials, request, null));
 
       // Run the HTTP request in a future task so we have the opportunity
       // to cancel it if it gets hung up; which is possible if stuck at
       // socket native layer.  see issue JENKINS-30558
-      httpTask =
+      FutureTask<String> httpTask =
           new FutureTask<String>(
               new Callable<String>() {
 
@@ -284,7 +282,7 @@ public class StashApiClient {
                   return this;
                 }
               }.init(client, request));
-      thread = new Thread(httpTask);
+      Thread thread = new Thread(httpTask);
       thread.start();
       response = httpTask.get(HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
@@ -310,16 +308,13 @@ public class StashApiClient {
     request.setHeader("Connection", "close");
 
     int response = -1;
-    FutureTask<Integer> httpTask = null;
-    Thread thread;
-
     try {
       request.addHeader(new BasicScheme().authenticate(credentials, request, null));
 
       // Run the HTTP request in a future task so we have the opportunity
       // to cancel it if it gets hung up; which is possible if stuck at
       // socket native layer.  see issue JENKINS-30558
-      httpTask =
+      FutureTask<Integer> httpTask =
           new FutureTask<Integer>(
               new Callable<Integer>() {
 
@@ -339,7 +334,7 @@ public class StashApiClient {
                   return this;
                 }
               }.init(client, request));
-      thread = new Thread(httpTask);
+      Thread thread = new Thread(httpTask);
       thread.start();
       response = httpTask.get(HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
@@ -381,16 +376,13 @@ public class StashApiClient {
     }
 
     String response = "";
-    FutureTask<String> httpTask = null;
-    Thread thread;
-
     try {
       request.addHeader(new BasicScheme().authenticate(credentials, request, null));
 
       // Run the HTTP request in a future task so we have the opportunity
       // to cancel it if it gets hung up; which is possible if stuck at
       // socket native layer.  see issue JENKINS-30558
-      httpTask =
+      FutureTask<String> httpTask =
           new FutureTask<String>(
               new Callable<String>() {
 
@@ -421,7 +413,7 @@ public class StashApiClient {
                   return this;
                 }
               }.init(client, request));
-      thread = new Thread(httpTask);
+      Thread thread = new Thread(httpTask);
       thread.start();
       response = httpTask.get(HTTP_REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
