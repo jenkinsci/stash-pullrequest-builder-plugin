@@ -32,6 +32,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import jenkins.model.Jenkins;
 import jenkins.model.ParameterizedJobMixIn;
+import jenkins.model.ParameterizedJobMixIn.ParameterizedJob;
 import org.apache.commons.lang.StringUtils;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient.StashApiException;
@@ -209,9 +210,11 @@ public class StashRepository {
   private void cancelPreviousJobsInQueueThatMatch(@Nonnull StashCause stashCause) {
     logger.fine("Looking for queued jobs that match PR ID: " + stashCause.getPullRequestId());
     Queue queue = Jenkins.getInstance().getQueue();
-    for (Queue.Item item : queue.getItems()) {
+
+    // Cast is safe due to StashBuildTrigger#isApplicable() check
+    for (Queue.Item item : queue.getItems((ParameterizedJob) job)) {
       if (hasCauseFromTheSamePullRequest(item.getCauses(), stashCause)) {
-        logger.info("Canceling item in queue: " + item);
+        logger.info(format("%s: canceling item in queue: %s", job.getFullName(), item));
         queue.cancel(item);
       }
     }
