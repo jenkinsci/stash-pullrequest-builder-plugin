@@ -197,6 +197,8 @@ public class StashRepository {
           StashCause sc = (StashCause) cause;
           if (StringUtils.equals(sc.getPullRequestId(), pullRequestCause.getPullRequestId())
               && StringUtils.equals(
+                  sc.getSourceRepositoryOwner(), pullRequestCause.getSourceRepositoryOwner())
+              && StringUtils.equals(
                   sc.getSourceRepositoryName(), pullRequestCause.getSourceRepositoryName())) {
             return true;
           }
