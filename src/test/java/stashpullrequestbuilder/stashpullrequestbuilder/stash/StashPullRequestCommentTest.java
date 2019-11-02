@@ -67,14 +67,6 @@ public class StashPullRequestCommentTest {
   }
 
   @Test
-  public void comment_compareTo_null_throws() {
-    StashPullRequestComment comment = new StashPullRequestComment();
-
-    expectedException.expect(NullPointerException.class);
-    comment.compareTo(null);
-  }
-
-  @Test
   public void comments_with_same_id_are_equal() {
     StashPullRequestComment comment1 = new StashPullRequestComment();
     comment1.setCommentId(1);
