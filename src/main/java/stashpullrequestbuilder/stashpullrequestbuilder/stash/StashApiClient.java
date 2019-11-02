@@ -427,15 +427,11 @@ public class StashApiClient {
   }
 
   private StashPullRequestResponse parsePullRequestJson(String response) throws IOException {
-    StashPullRequestResponse parsedResponse;
-    parsedResponse = mapper.readValue(response, StashPullRequestResponse.class);
-    return parsedResponse;
+    return mapper.readValue(response, StashPullRequestResponse.class);
   }
 
   private StashPullRequestActivityResponse parseCommentJson(String response) throws IOException {
-    StashPullRequestActivityResponse parsedResponse;
-    parsedResponse = mapper.readValue(response, StashPullRequestActivityResponse.class);
-    return parsedResponse;
+    return mapper.readValue(response, StashPullRequestActivityResponse.class);
   }
 
   @Nonnull
@@ -453,16 +449,12 @@ public class StashApiClient {
   }
 
   private StashPullRequestComment parseSingleCommentJson(String response) throws IOException {
-    StashPullRequestComment parsedResponse;
-    parsedResponse = mapper.readValue(response, StashPullRequestComment.class);
-    return parsedResponse;
+    return mapper.readValue(response, StashPullRequestComment.class);
   }
 
   protected static StashPullRequestMergeableResponse parsePullRequestMergeStatus(String response)
       throws IOException {
-    StashPullRequestMergeableResponse parsedResponse;
-    parsedResponse = mapper.readValue(response, StashPullRequestMergeableResponse.class);
-    return parsedResponse;
+    return mapper.readValue(response, StashPullRequestMergeableResponse.class);
   }
 
   private String pullRequestsPath() {
