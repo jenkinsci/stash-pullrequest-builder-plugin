@@ -134,6 +134,7 @@ public class StashRepository {
     return commentResponse.getCommentId().toString();
   }
 
+  @Nullable
   public static AbstractMap.SimpleEntry<String, String> getParameter(String content) {
     if (content.isEmpty()) {
       return null;
@@ -269,6 +270,7 @@ public class StashRepository {
     return values;
   }
 
+  @Nullable
   public Queue.Item startJob(StashCause cause) {
     List<ParameterValue> values = getParameters(cause);
 
