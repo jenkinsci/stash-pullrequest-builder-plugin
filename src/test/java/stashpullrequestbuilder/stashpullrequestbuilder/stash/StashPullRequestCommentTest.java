@@ -5,15 +5,12 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
+import static org.junit.Assert.assertThrows;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 /** Unit tests for StashPullRequestComment */
 public class StashPullRequestCommentTest {
-
-  @Rule public ExpectedException expectedException = ExpectedException.none();
 
   @Test
   public void accessors_work() {
@@ -130,8 +127,7 @@ public class StashPullRequestCommentTest {
     StashPullRequestComment comment2 = new StashPullRequestComment();
     comment2.setCommentId(2);
 
-    expectedException.expect(NullPointerException.class);
-    comment1.compareTo(comment2);
+    assertThrows(NullPointerException.class, () -> comment1.compareTo(comment2));
   }
 
   @Test
@@ -141,7 +137,6 @@ public class StashPullRequestCommentTest {
 
     StashPullRequestComment comment2 = new StashPullRequestComment();
 
-    expectedException.expect(NullPointerException.class);
-    comment1.compareTo(comment2);
+    assertThrows(NullPointerException.class, () -> comment1.compareTo(comment2));
   }
 }

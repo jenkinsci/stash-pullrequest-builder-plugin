@@ -18,13 +18,16 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static java.lang.String.format;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThrows;
 
 import com.github.tomakehurst.wiremock.client.BasicCredentials;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
@@ -35,7 +38,6 @@ import java.util.concurrent.ExecutionException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient.StashApiException;
 
 /*
@@ -50,8 +52,6 @@ import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient.Stas
 
 /** Created by nathan on 7/06/2015. */
 public class StashApiClientTest {
-
-  @Rule public ExpectedException expectedException = ExpectedException.none();
 
   @Rule
   public WireMockRule wireMockRule =
@@ -193,33 +193,33 @@ public class StashApiClientTest {
   public void getPullRequests_throws_on_not_found() throws Exception {
     stubFor(any(anyUrl()).willReturn(notFound()));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in GET request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    client.getPullRequests();
+    assertThat(
+        assertThrows(StashApiException.class, () -> client.getPullRequests()),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in GET request"))));
   }
 
   @Test
   public void getPullRequests_throws_on_malformed_response() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in GET request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    client.getPullRequests();
+    assertThat(
+        assertThrows(StashApiException.class, () -> client.getPullRequests()),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in GET request"))));
   }
 
   @Test
   public void getPullRequests_throws_on_connection_reset() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in GET request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    client.getPullRequests();
+    assertThat(
+        assertThrows(StashApiException.class, () -> client.getPullRequests()),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in GET request"))));
   }
 
   @Test
@@ -255,33 +255,39 @@ public class StashApiClientTest {
   public void getPullRequestComments_throws_on_not_found() throws Exception {
     stubFor(any(anyUrl()).willReturn(notFound()));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in GET request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    client.getPullRequestComments(projectName, repositoryName, pullRequestId);
+    assertThat(
+        assertThrows(
+            StashApiException.class,
+            () -> client.getPullRequestComments(projectName, repositoryName, pullRequestId)),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in GET request"))));
   }
 
   @Test
   public void getPullRequestComments_throws_on_malformed_response() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in GET request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    client.getPullRequestComments(projectName, repositoryName, pullRequestId);
+    assertThat(
+        assertThrows(
+            StashApiException.class,
+            () -> client.getPullRequestComments(projectName, repositoryName, pullRequestId)),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in GET request"))));
   }
 
   @Test
   public void getPullRequestComments_throws_on_connection_reset() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in GET request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    client.getPullRequestComments(projectName, repositoryName, pullRequestId);
+    assertThat(
+        assertThrows(
+            StashApiException.class,
+            () -> client.getPullRequestComments(projectName, repositoryName, pullRequestId)),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in GET request"))));
   }
 
   @Test
@@ -302,22 +308,26 @@ public class StashApiClientTest {
   public void deletePullRequestComment_throws_on_malformed_response() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in DELETE request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    client.deletePullRequestComment(pullRequestId, commentId);
+    assertThat(
+        assertThrows(
+            StashApiException.class,
+            () -> client.deletePullRequestComment(pullRequestId, commentId)),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in DELETE request"))));
   }
 
   @Test
   public void deletePullRequestComment_throws_on_connection_reset() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in DELETE request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    client.deletePullRequestComment(pullRequestId, commentId);
+    assertThat(
+        assertThrows(
+            StashApiException.class,
+            () -> client.deletePullRequestComment(pullRequestId, commentId)),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in DELETE request"))));
   }
 
   @Test
@@ -344,44 +354,52 @@ public class StashApiClientTest {
   public void postPullRequestComment_throws_on_no_content() throws Exception {
     stubFor(post(pullRequestPostCommentPath()).willReturn(noContent()));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in POST request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    client.postPullRequestComment(pullRequestId, "Some comment");
+    assertThat(
+        assertThrows(
+            StashApiException.class,
+            () -> client.postPullRequestComment(pullRequestId, "Some comment")),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in POST request"))));
   }
 
   @Test
   public void postPullRequestComment_throws_on_not_found() throws Exception {
     stubFor(any(anyUrl()).willReturn(notFound()));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in POST request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    client.postPullRequestComment(pullRequestId, "Some comment");
+    assertThat(
+        assertThrows(
+            StashApiException.class,
+            () -> client.postPullRequestComment(pullRequestId, "Some comment")),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in POST request"))));
   }
 
   @Test
   public void postPullRequestComment_throws_on_malformed_response() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in POST request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    client.postPullRequestComment(pullRequestId, "Some comment");
+    assertThat(
+        assertThrows(
+            StashApiException.class,
+            () -> client.postPullRequestComment(pullRequestId, "Some comment")),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in POST request"))));
   }
 
   @Test
   public void postPullRequestComment_throws_on_connection_reset() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in POST request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    client.postPullRequestComment(pullRequestId, "Some comment");
+    assertThat(
+        assertThrows(
+            StashApiException.class,
+            () -> client.postPullRequestComment(pullRequestId, "Some comment")),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in POST request"))));
   }
 
   @Test
@@ -400,33 +418,36 @@ public class StashApiClientTest {
   public void getPullRequestMergeStatus_throws_on_not_found() throws Exception {
     stubFor(any(anyUrl()).willReturn(notFound()));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in GET request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    client.getPullRequestMergeStatus(pullRequestId);
+    assertThat(
+        assertThrows(
+            StashApiException.class, () -> client.getPullRequestMergeStatus(pullRequestId)),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in GET request"))));
   }
 
   @Test
   public void getPullRequestMergeStatus_throws_on_malformed_response() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in GET request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    client.getPullRequestMergeStatus(pullRequestId);
+    assertThat(
+        assertThrows(
+            StashApiException.class, () -> client.getPullRequestMergeStatus(pullRequestId)),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in GET request"))));
   }
 
   @Test
   public void getPullRequestMergeStatus_throws_on_connection_reset() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in GET request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    client.getPullRequestMergeStatus(pullRequestId);
+    assertThat(
+        assertThrows(
+            StashApiException.class, () -> client.getPullRequestMergeStatus(pullRequestId)),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in GET request"))));
   }
 
   @Test
@@ -448,54 +469,59 @@ public class StashApiClientTest {
   public void mergePullRequest_throws_on_empty_response() throws Exception {
     stubFor(post(pullRequestMergePath(mergeVersion)).willReturn(noContent()));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in POST request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    assertThat(client.mergePullRequest(pullRequestId, mergeVersion), is(true));
+    assertThat(
+        assertThrows(
+            StashApiException.class, () -> client.mergePullRequest(pullRequestId, mergeVersion)),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in POST request"))));
   }
 
   @Test
   public void mergePullRequest_throws_on_conflict() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withStatus(409)));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in POST request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    client.mergePullRequest(pullRequestId, mergeVersion);
+    assertThat(
+        assertThrows(
+            StashApiException.class, () -> client.mergePullRequest(pullRequestId, mergeVersion)),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in POST request"))));
   }
 
   @Test
   public void mergePullRequest_throws_on_not_found() throws Exception {
     stubFor(any(anyUrl()).willReturn(notFound()));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in POST request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    client.mergePullRequest(pullRequestId, mergeVersion);
+    assertThat(
+        assertThrows(
+            StashApiException.class, () -> client.mergePullRequest(pullRequestId, mergeVersion)),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in POST request"))));
   }
 
   @Test
   public void mergePullRequest_throws_on_malformed_response() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in POST request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    client.mergePullRequest(pullRequestId, mergeVersion);
+    assertThat(
+        assertThrows(
+            StashApiException.class, () -> client.mergePullRequest(pullRequestId, mergeVersion)),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in POST request"))));
   }
 
   @Test
   public void mergePullRequest_throws_on_connection_reset() throws Exception {
     stubFor(any(anyUrl()).willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
 
-    expectedException.expect(StashApiException.class);
-    expectedException.expectMessage(containsString("Exception in POST request"));
-    expectedException.expectCause(is(instanceOf(ExecutionException.class)));
-
-    client.mergePullRequest(pullRequestId, mergeVersion);
+    assertThat(
+        assertThrows(
+            StashApiException.class, () -> client.mergePullRequest(pullRequestId, mergeVersion)),
+        allOf(
+            hasProperty("cause", is(instanceOf(ExecutionException.class))),
+            hasProperty("message", containsString("Exception in POST request"))));
   }
 }
