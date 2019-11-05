@@ -663,16 +663,17 @@ public class StashRepository {
 
   private boolean isForTargetBranch(StashPullRequestResponseValue pullRequest) {
     String targetBranchesToBuild = this.trigger.getTargetBranchesToBuild();
-    if (StringUtils.isNotEmpty(targetBranchesToBuild)) {
-      String[] branches = targetBranchesToBuild.split(",");
-      for (String branch : branches) {
-        if (pullRequest.getToRef().getBranch().getName().matches(branch.trim())) {
-          return true;
-        }
-      }
-      return false;
+    if (StringUtils.isEmpty(targetBranchesToBuild)) {
+      return true;
     }
-    return true;
+
+    String[] branches = targetBranchesToBuild.split(",");
+    for (String branch : branches) {
+      if (pullRequest.getToRef().getBranch().getName().matches(branch.trim())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private boolean isSkipBuild(String pullRequestContentString) {
