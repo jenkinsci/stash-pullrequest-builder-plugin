@@ -27,12 +27,15 @@ public class StashBuildListener extends RunListener<Run<?, ?>> {
 
   @Override
   public void onStarted(Run<?, ?> run, TaskListener listener) {
-    logger.info("BuildListener onStarted called.");
-
     StashCause cause = run.getCause(StashCause.class);
     if (cause == null) {
       return;
     }
+
+    logger.info(
+        format(
+            "%s started for PR #%s, commit %s",
+            run, cause.getPullRequestId(), cause.getSourceCommitHash()));
 
     try {
       run.setDescription(cause.getShortDescription());
