@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+
+  <!--
+    Code might be used to include CRLF characters into log messages
+
+    Make sure that we sanitize everything that's being logged. Logging untrusted
+    data as is can produce misleading logs.
+  -->
+  <Match>
+    <Bug pattern="CRLF_INJECTION_LOGS" />
+  </Match>
+
+  <!--
+    Class does not implement a toString method
+
+    This can be useful for debugging, but it's probably not worth the trouble to
+    implement it for every class.
+  -->
+  <Match>
+    <Bug pattern="IMC_IMMATURE_CLASS_NO_TOSTRING" />
+  </Match>
+
+  <!--
+    Class has a circular dependency with other classes
+
+    StashBuildTrigger runs StashRepository, but StashRepository gets settings
+    from StashBuildTrigger. It should be possible to separate configuration from
+    the trigger. However, that it not a major issue.
+  -->
+  <Match>
+    <Bug pattern="FCCD_FIND_CLASS_CIRCULAR_DEPENDENCY" />
+    <Class name="stashpullrequestbuilder.stashpullrequestbuilder.StashBuildTrigger" />
+  </Match>
+
+  <!--
+    Code appears to call the same method on the same object redundantly
+
+    The detected issue is a false positive (a function getting current time when
+    it starts and when it finishes), but it's a sign that the logger should deal
+    with timestamps on its own, one timestamp for every line.
+  -->
+  <Match>
+    <Bug pattern="PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS" />
+    <Class name="stashpullrequestbuilder.stashpullrequestbuilder.StashRepository" />
+  </Match>
+
+  <!--
+    Concatenating user-controlled input into a URL
+
+    Configurations strings such as the repository name should be validated at
+    the runtime. They should also be validated in the web interface. Strings
+    coming from the Bitbucket Server should also be checked before they are used
+    to construct a URL.
+  -->
+  <Match>
+    <Bug pattern="HTTP_PARAMETER_POLLUTION" />
+    <Class name="stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient" />
+  </Match>
+
+  <!--
+    Code does not presize the allocation of a collection
+
+    It's a false positive, but we should check if ArrayList is always the best
+    choice for the data that comes from the Bitbucket Server.
+  -->
+  <Match>
+    <Bug pattern="PSC_PRESIZE_COLLECTIONS" />
+    <Class name="stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient" />
+  </Match>
+
+  <!--
+    Code throws exception with static message string
+
+    We should provide whatever information is available about the context. That
+    should include the URL if the code is making an HTTP request.
+  -->
+  <Match>
+    <Bug pattern="WEM_WEAK_EXCEPTION_MESSAGING" />
+    <Class name="stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient" />
+  </Match>
+
+</FindBugsFilter>
