@@ -55,7 +55,7 @@ public class StashRepository {
       "\\[\\*BuildFinished\\* \\*\\*%s\\*\\*\\] ([0-9a-fA-F]+) into ([0-9a-fA-F]+)";
 
   private static final String BUILD_FINISH_SENTENCE =
-      BUILD_FINISH_MARKER + " %n%n **[%s](%s)** - Build *#%d* which took *%s*";
+      BUILD_FINISH_MARKER + " %n%n **[%s](%s)** - Build *%d* which took *%s*";
 
   private static final String BUILD_SUCCESS_COMMENT = "✓ BUILD SUCCESS";
   private static final String BUILD_FAILURE_COMMENT = "✕ BUILD FAILURE";
