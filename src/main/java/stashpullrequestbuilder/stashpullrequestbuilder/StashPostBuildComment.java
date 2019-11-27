@@ -12,6 +12,9 @@ import hudson.tasks.Publisher;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 public class StashPostBuildComment extends Notifier {
+
+  @Extension public static final DescriptorImpl DESCRIPTOR = new DescriptorImpl();
+
   private String buildSuccessfulComment;
   private String buildFailedComment;
 
@@ -51,8 +54,6 @@ public class StashPostBuildComment extends Notifier {
   public BuildStepDescriptor<Publisher> getDescriptor() {
     return DESCRIPTOR;
   }
-
-  @Extension public static final DescriptorImpl DESCRIPTOR = new DescriptorImpl();
 
   public static class DescriptorImpl extends BuildStepDescriptor<Publisher> {
 

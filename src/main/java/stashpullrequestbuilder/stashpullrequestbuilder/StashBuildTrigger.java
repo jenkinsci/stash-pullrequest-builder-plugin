@@ -35,6 +35,8 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
   private static final Logger logger =
       Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
 
+  @Extension public static final DescriptorImpl descriptor = new DescriptorImpl();
+
   // Required settings
   private final String cron;
   private final String stashHost;
@@ -58,8 +60,6 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
 
   private transient StashRepository stashRepository;
   private transient StashPollingAction stashPollingAction;
-
-  @Extension public static final DescriptorImpl descriptor = new DescriptorImpl();
 
   @DataBoundConstructor
   public StashBuildTrigger(
