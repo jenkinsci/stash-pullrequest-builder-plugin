@@ -122,7 +122,7 @@ public class StashRepository {
    * @return comment ID
    * @throws StashApiException if posting the comment fails
    */
-  public String postBuildStartCommentTo(StashPullRequestResponseValue pullRequest)
+  private String postBuildStartCommentTo(StashPullRequestResponseValue pullRequest)
       throws StashApiException {
     String sourceCommit = pullRequest.getFromRef().getLatestCommit();
     String destinationCommit = pullRequest.getToRef().getLatestCommit();
@@ -147,7 +147,7 @@ public class StashRepository {
     return null;
   }
 
-  public static Map<String, String> getParametersFromContent(String content) {
+  static Map<String, String> getParametersFromContent(String content) {
     Map<String, String> result = new TreeMap<>();
     String[] lines = content.split("\\r?\\n|\\r");
     for (String line : lines) {
@@ -160,7 +160,7 @@ public class StashRepository {
     return result;
   }
 
-  public Map<String, String> getAdditionalParameters(StashPullRequestResponseValue pullRequest)
+  Map<String, String> getAdditionalParameters(StashPullRequestResponseValue pullRequest)
       throws StashApiException {
     StashPullRequestResponseValueRepository destination = pullRequest.getToRef();
     String owner = destination.getRepository().getProjectName();
@@ -282,7 +282,7 @@ public class StashRepository {
         job, -1, new CauseAction(cause), new StashQueueAction(), new ParametersAction(values));
   }
 
-  public void addFutureBuildTasks(Collection<StashPullRequestResponseValue> pullRequests) {
+  void addFutureBuildTasks(Collection<StashPullRequestResponseValue> pullRequests) {
     for (StashPullRequestResponseValue pullRequest : pullRequests) {
       Map<String, String> additionalParameters;
 

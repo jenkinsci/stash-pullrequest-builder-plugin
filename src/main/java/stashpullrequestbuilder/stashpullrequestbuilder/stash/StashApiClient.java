@@ -261,7 +261,7 @@ public class StashApiClient {
     return response;
   }
 
-  public void deleteRequest(String path) throws StashApiException {
+  private void deleteRequest(String path) throws StashApiException {
     CloseableHttpClient client = getHttpClient();
 
     HttpDelete request = new HttpDelete(path);
