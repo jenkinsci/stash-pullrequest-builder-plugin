@@ -1,4 +1,4 @@
-package stashpullrequestbuilder.stashpullrequestbuilder.stash;
+package stashpullrequestbuilder.stashpullrequestbuilder;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
@@ -11,10 +11,9 @@ import static org.hamcrest.Matchers.nullValue;
 import java.util.AbstractMap;
 import java.util.Map;
 import org.junit.Test;
-import stashpullrequestbuilder.stashpullrequestbuilder.StashRepository;
 
 /** Created by nathan on 7/06/2015. */
-public class AdditionalParameterRegExTest {
+public class StashRepositoryRegexTest {
 
   @Test
   public void testSingleParameter() throws Exception {
