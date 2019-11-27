@@ -224,7 +224,7 @@ public class StashApiClientTest {
   }
 
   @Test
-  public void getPullRequestComments_gets_pull_requests_from_multiple_pages() throws Exception {
+  public void getPullRequestComments_gets_comments_from_multiple_pages() throws Exception {
     stubFor(
         get(pullRequestActivitiesPath(0))
             .willReturn(jsonResponse("PullRequestCommentsPage1.json")));

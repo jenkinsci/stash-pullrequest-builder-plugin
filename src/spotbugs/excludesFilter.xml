@@ -59,17 +59,6 @@
   </Match>
 
   <!--
-    Code does not presize the allocation of a collection
-
-    It's a false positive, but we should check if ArrayList is always the best
-    choice for the data that comes from the Bitbucket Server.
-  -->
-  <Match>
-    <Bug pattern="PSC_PRESIZE_COLLECTIONS" />
-    <Class name="stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient" />
-  </Match>
-
-  <!--
     Code throws exception with static message string
 
     We should provide whatever information is available about the context. That

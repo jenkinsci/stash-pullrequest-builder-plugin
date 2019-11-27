@@ -104,7 +104,7 @@ public class StashApiClient {
     try {
       boolean isLastPage = false;
       int start = 0;
-      List<StashPullRequestActivityResponse> commentResponses = new ArrayList<>();
+      List<StashPullRequestComment> comments = new ArrayList<>();
       while (!isLastPage) {
         String response =
             getRequest(
@@ -116,15 +116,25 @@ public class StashApiClient {
                     + pullRequestId
                     + "/activities?start="
                     + start);
-        StashPullRequestActivityResponse resp =
+        StashPullRequestActivityResponse parsedResponse =
             mapper.readValue(response, StashPullRequestActivityResponse.class);
-        isLastPage = resp.getIsLastPage();
-        if (!isLastPage) {
-          start = resp.getNextPageStart();
+
+        List<StashPullRequestActivity> prValues = parsedResponse.getPrValues();
+        if (prValues != null) {
+          for (StashPullRequestActivity activity : prValues) {
+            if (activity != null && activity.getComment() != null) {
+              comments.add(activity.getComment());
+            }
+          }
         }
-        commentResponses.add(resp);
+
+        isLastPage = parsedResponse.getIsLastPage();
+        if (!isLastPage) {
+          start = parsedResponse.getNextPageStart();
+        }
       }
-      return extractComments(commentResponses);
+
+      return comments;
     } catch (IOException e) {
       throw new StashApiException(
           format(
@@ -334,20 +344,6 @@ public class StashApiClient {
         || responseCode == HttpStatus.SC_NO_CONTENT
         || responseCode == HttpStatus.SC_RESET_CONTENT
         || responseCode == HttpStatus.SC_CONFLICT;
-  }
-
-  @Nonnull
-  private List<StashPullRequestComment> extractComments(
-      Iterable<StashPullRequestActivityResponse> responses) {
-    List<StashPullRequestComment> comments = new ArrayList<>();
-    for (StashPullRequestActivityResponse parsedResponse : responses) {
-      for (StashPullRequestActivity a : parsedResponse.getPrValues()) {
-        if (a != null && a.getComment() != null) {
-          comments.add(a.getComment());
-        }
-      }
-    }
-    return comments;
   }
 
   private String pullRequestsPath() {
