@@ -51,7 +51,6 @@ public class StashBuildListenerTest {
 
   private StashCause stashCause;
   private TaskListener taskListener;
-  private PrintStream printStream;
   private ByteArrayOutputStream buildLogBuffer;
 
   @Mock private FreeStyleBuild build;
@@ -61,7 +60,7 @@ public class StashBuildListenerTest {
     stashBuildListener = new StashBuildListener();
 
     buildLogBuffer = new ByteArrayOutputStream();
-    printStream = new PrintStream(buildLogBuffer, true, "UTF-8");
+    PrintStream printStream = new PrintStream(buildLogBuffer, true, "UTF-8");
     taskListener = new StreamTaskListener(printStream, null);
 
     stashCause =

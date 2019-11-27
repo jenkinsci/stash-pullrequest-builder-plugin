@@ -65,9 +65,6 @@ public class StashRepositoryTest {
   private FreeStyleProject project;
   private StashPollingAction pollLog;
   private StashPullRequestResponseValue pullRequest;
-  private StashPullRequestResponseValueRepository repository;
-  private StashPullRequestResponseValueRepositoryBranch branch;
-  private StashPullRequestResponseValueRepositoryRepository repoRepo;
   private List<StashPullRequestResponseValue> pullRequestList;
 
   @Mock private StashBuildTrigger trigger;
@@ -80,12 +77,15 @@ public class StashRepositoryTest {
     pollLog = new StashPollingAction(project);
     stashRepository = new StashRepository(project, trigger, stashApiClient, pollLog);
 
-    branch = new StashPullRequestResponseValueRepositoryBranch();
+    StashPullRequestResponseValueRepositoryBranch branch =
+        new StashPullRequestResponseValueRepositoryBranch();
     branch.setName("feature/add-bloat");
 
-    repoRepo = new StashPullRequestResponseValueRepositoryRepository();
+    StashPullRequestResponseValueRepositoryRepository repoRepo =
+        new StashPullRequestResponseValueRepositoryRepository();
 
-    repository = new StashPullRequestResponseValueRepository();
+    StashPullRequestResponseValueRepository repository =
+        new StashPullRequestResponseValueRepository();
     repository.setBranch(branch);
     repository.setRepository(repoRepo);
 
