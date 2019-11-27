@@ -4,6 +4,7 @@ import static java.lang.String.format;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import hudson.Util;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.security.KeyManagementException;
@@ -226,12 +227,13 @@ public class StashApiClient {
     }
 
     try {
-      return EntityUtils.toString(entity, Consts.UTF_8);
+      return Util.fixNull(EntityUtils.toString(entity, Consts.UTF_8));
     } catch (IOException e) {
       throw new StashApiException("Cannot decode HTTP response contents", e);
     }
   }
 
+  @Nonnull
   private String getRequest(String path) throws StashApiException {
     logger.log(Level.FINEST, "PR-GET-REQUEST:" + path);
     CloseableHttpClient client = getHttpClient();
@@ -353,6 +355,7 @@ public class StashApiClient {
     logger.log(Level.FINE, "Delete comment {" + path + "} returned result code; " + response);
   }
 
+  @Nonnull
   private String postRequest(String path, String comment) throws StashApiException {
     logger.log(Level.FINEST, "PR-POST-REQUEST:" + path + " with: " + comment);
     CloseableHttpClient client = getHttpClient();
