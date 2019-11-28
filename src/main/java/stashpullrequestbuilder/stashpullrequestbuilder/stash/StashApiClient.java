@@ -91,7 +91,8 @@ public class StashApiClient {
       int start = 0;
       while (!isLastPage) {
         String response = getRequest(pullRequestsPath(start));
-        StashPullRequestResponse parsedResponse = parsePullRequestJson(response);
+        StashPullRequestResponse parsedResponse =
+            mapper.readValue(response, StashPullRequestResponse.class);
         isLastPage = parsedResponse.getIsLastPage();
         if (!isLastPage) {
           start = parsedResponse.getNextPageStart();
@@ -124,7 +125,8 @@ public class StashApiClient {
                     + pullRequestId
                     + "/activities?start="
                     + start);
-        StashPullRequestActivityResponse resp = parseCommentJson(response);
+        StashPullRequestActivityResponse resp =
+            mapper.readValue(response, StashPullRequestActivityResponse.class);
         isLastPage = resp.getIsLastPage();
         if (!isLastPage) {
           start = resp.getNextPageStart();
@@ -153,7 +155,7 @@ public class StashApiClient {
     String path = pullRequestPath(pullRequestId) + "/comments";
     String response = postRequest(path, comment);
     try {
-      return parseSingleCommentJson(response);
+      return mapper.readValue(response, StashPullRequestComment.class);
     } catch (IOException e) {
       throw new StashApiException("Cannot parse reply after comment posting", e);
     }
@@ -165,7 +167,7 @@ public class StashApiClient {
     String path = pullRequestPath(pullRequestId) + "/merge";
     String response = getRequest(path);
     try {
-      return parsePullRequestMergeStatus(response);
+      return mapper.readValue(response, StashPullRequestMergeableResponse.class);
     } catch (IOException e) {
       throw new StashApiException("Cannot parse merge status", e);
     }
@@ -448,14 +450,6 @@ public class StashApiClient {
         || responseCode == HttpStatus.SC_CONFLICT;
   }
 
-  private StashPullRequestResponse parsePullRequestJson(String response) throws IOException {
-    return mapper.readValue(response, StashPullRequestResponse.class);
-  }
-
-  private StashPullRequestActivityResponse parseCommentJson(String response) throws IOException {
-    return mapper.readValue(response, StashPullRequestActivityResponse.class);
-  }
-
   @Nonnull
   private List<StashPullRequestComment> extractComments(
       Iterable<StashPullRequestActivityResponse> responses) {
@@ -468,15 +462,6 @@ public class StashApiClient {
       }
     }
     return comments;
-  }
-
-  private StashPullRequestComment parseSingleCommentJson(String response) throws IOException {
-    return mapper.readValue(response, StashPullRequestComment.class);
-  }
-
-  protected static StashPullRequestMergeableResponse parsePullRequestMergeStatus(String response)
-      throws IOException {
-    return mapper.readValue(response, StashPullRequestMergeableResponse.class);
   }
 
   private String pullRequestsPath() {
