@@ -12,10 +12,11 @@ import hudson.model.listeners.RunListener;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
-import jenkins.model.JenkinsLocationConfiguration;
+import jenkins.model.Jenkins;
 import jenkins.model.ParameterizedJobMixIn;
 import org.apache.commons.lang.StringUtils;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient.StashApiException;
@@ -64,16 +65,15 @@ public class StashBuildListener extends RunListener<Run<?, ?>> {
 
     StashRepository repository = trigger.getRepository();
     Result result = run.getResult();
-    // Note: current code should no longer use "new JenkinsLocationConfiguration()"
-    // as only one instance per runtime is really supported by the current core.
-    JenkinsLocationConfiguration globalConfig = JenkinsLocationConfiguration.get();
-    String rootUrl = globalConfig == null ? null : globalConfig.getUrl();
-    String buildUrl = "";
-    if (rootUrl == null) {
-      buildUrl = " PLEASE SET JENKINS ROOT URL FROM GLOBAL CONFIGURATION " + run.getUrl();
-    } else {
-      buildUrl = rootUrl + run.getUrl();
-    }
+
+    // Make a link to the build page in Jenkins. If Jenkins root URL is not
+    // configured, post a message that won't show as a link to indicate the
+    // problem. The build status would still be visible in that case.
+    final String rootUrl =
+        Objects.toString(
+            Jenkins.getInstance().getRootUrl(),
+            "=== PLEASE SET JENKINS ROOT URL FROM GLOBAL CONFIGURATION ===");
+    final String buildUrl = rootUrl + run.getUrl();
 
     // Delete the "Build Started" comment, as it gets replaced with a comment
     // about the build result. Failure to delete the comment is not fatal, it's
