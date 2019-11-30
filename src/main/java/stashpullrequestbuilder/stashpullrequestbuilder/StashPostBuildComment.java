@@ -9,6 +9,7 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
+import javax.annotation.Nonnull;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 public class StashPostBuildComment extends Notifier {
@@ -69,6 +70,7 @@ public class StashPostBuildComment extends Notifier {
       return true;
     }
 
+    @Nonnull
     @Override
     public String getDisplayName() {
       return "Stash pull request builder - post build comment";
