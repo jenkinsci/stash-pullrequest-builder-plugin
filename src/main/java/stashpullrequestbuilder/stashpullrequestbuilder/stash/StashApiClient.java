@@ -183,7 +183,7 @@ public class StashApiClient {
     }
 
     // Return the whole response for the purpose of logging
-    return Optional.ofNullable(response);
+    return Optional.of(response);
   }
 
   private CloseableHttpClient getHttpClient() throws StashApiException {
