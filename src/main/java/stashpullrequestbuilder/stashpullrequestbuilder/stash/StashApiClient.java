@@ -237,7 +237,6 @@ public class StashApiClient {
     // address large amount of close_wait sockets client and fin sockets server side
     request.addHeader("Connection", "close");
 
-    String response = null;
     try {
       request.addHeader(new BasicScheme().authenticate(credentials, request, null));
       HttpResponse httpResponse = client.execute(request);
@@ -251,14 +250,14 @@ public class StashApiClient {
                 + httpResponse.getStatusLine().getReasonPhrase());
       }
 
-      response = entityAsString(httpResponse);
+      String response = entityAsString(httpResponse);
+      logger.log(Level.FINEST, "PR-GET-RESPONSE:" + response);
+      return response;
     } catch (AuthenticationException | IOException e) {
       throw new StashApiException("Exception in GET request", e);
     } finally {
       request.releaseConnection();
     }
-    logger.log(Level.FINEST, "PR-GET-RESPONSE:" + response);
-    return response;
   }
 
   private void deleteRequest(String path) throws StashApiException {
@@ -270,17 +269,15 @@ public class StashApiClient {
     // address large amount of close_wait sockets client and fin sockets server side
     request.setHeader("Connection", "close");
 
-    int response = -1;
     try {
       request.addHeader(new BasicScheme().authenticate(credentials, request, null));
-      response = client.execute(request).getStatusLine().getStatusCode();
+      int response = client.execute(request).getStatusLine().getStatusCode();
+      logger.log(Level.FINE, "Delete comment {" + path + "} returned result code; " + response);
     } catch (AuthenticationException | IOException e) {
       throw new StashApiException("Exception in DELETE request", e);
     } finally {
       request.releaseConnection();
     }
-
-    logger.log(Level.FINE, "Delete comment {" + path + "} returned result code; " + response);
   }
 
   @Nonnull
@@ -298,17 +295,15 @@ public class StashApiClient {
     if (comment != null) {
       ObjectNode node = mapper.getNodeFactory().objectNode();
       node.put("text", comment);
-      StringEntity requestEntity = null;
       try {
-        requestEntity =
+        StringEntity requestEntity =
             new StringEntity(mapper.writeValueAsString(node), ContentType.APPLICATION_JSON);
+        request.setEntity(requestEntity);
       } catch (IOException e) {
         throw new StashApiException("Exception preparing POST request", e);
       }
-      request.setEntity(requestEntity);
     }
 
-    String response = "";
     try {
       request.addHeader(new BasicScheme().authenticate(credentials, request, null));
       HttpResponse httpResponse = client.execute(request);
@@ -322,16 +317,14 @@ public class StashApiClient {
                 + httpResponse.getStatusLine().getReasonPhrase());
       }
 
-      response = entityAsString(httpResponse);
+      String response = entityAsString(httpResponse);
+      logger.log(Level.FINEST, "PR-POST-RESPONSE:" + response);
+      return response;
     } catch (AuthenticationException | IOException e) {
       throw new StashApiException("Exception in POST request", e);
     } finally {
       request.releaseConnection();
     }
-
-    logger.log(Level.FINEST, "PR-POST-RESPONSE:" + response);
-
-    return response;
   }
 
   private boolean validResponseCode(int responseCode) {
