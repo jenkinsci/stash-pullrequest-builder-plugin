@@ -20,7 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -171,7 +171,7 @@ public class StashRepository {
         client.getPullRequestComments(owner, repositoryName, id);
 
     // Process newest comments last so they can override older comments
-    Collections.sort(comments);
+    comments.sort(Comparator.naturalOrder());
 
     Map<String, String> result = new TreeMap<>();
 
@@ -594,7 +594,7 @@ public class StashRepository {
     }
 
     // Start with most recent comments
-    Collections.sort(comments, Collections.reverseOrder());
+    comments.sort(Comparator.reverseOrder());
 
     for (StashPullRequestComment comment : comments) {
       String content = comment.getText();
