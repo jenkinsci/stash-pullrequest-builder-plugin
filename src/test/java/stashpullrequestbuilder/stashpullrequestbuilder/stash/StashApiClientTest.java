@@ -5,14 +5,17 @@ import static com.github.tomakehurst.wiremock.client.WireMock.absent;
 import static com.github.tomakehurst.wiremock.client.WireMock.any;
 import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.delete;
+import static com.github.tomakehurst.wiremock.client.WireMock.deleteRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.noContent;
 import static com.github.tomakehurst.wiremock.client.WireMock.notFound;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static java.lang.String.format;
@@ -119,6 +122,11 @@ public class StashApiClientTest {
     stubFor(get(pullRequestPath(0)).willReturn(jsonResponse("PullRequestListEmpty.json")));
 
     assertThat(client.getPullRequests(), is(empty()));
+
+    verify(
+        getRequestedFor(urlEqualTo(pullRequestPath(0)))
+            .withBasicAuth(new BasicCredentials("Username", "Password"))
+            .withHeader("Connection", equalTo("close")));
   }
 
   @Test
@@ -221,6 +229,11 @@ public class StashApiClientTest {
 
     assertThat(
         client.getPullRequestComments(projectName, repositoryName, pullRequestId), is(empty()));
+
+    verify(
+        getRequestedFor(urlEqualTo(pullRequestActivitiesPath(0)))
+            .withBasicAuth(new BasicCredentials("Username", "Password"))
+            .withHeader("Connection", equalTo("close")));
   }
 
   @Test
@@ -289,6 +302,11 @@ public class StashApiClientTest {
     stubFor(delete(pullRequestCommentPath(commentId)).willReturn(noContent()));
 
     client.deletePullRequestComment(pullRequestId, commentId);
+
+    verify(
+        deleteRequestedFor(urlEqualTo(pullRequestCommentPath(commentId)))
+            .withBasicAuth(new BasicCredentials("Username", "Password"))
+            .withHeader("Connection", equalTo("close")));
   }
 
   @Test
@@ -296,6 +314,11 @@ public class StashApiClientTest {
     stubFor(any(anyUrl()).willReturn(notFound()));
 
     client.deletePullRequestComment(pullRequestId, commentId);
+
+    verify(
+        deleteRequestedFor(urlEqualTo(pullRequestCommentPath(commentId)))
+            .withBasicAuth(new BasicCredentials("Username", "Password"))
+            .withHeader("Connection", equalTo("close")));
   }
 
   @Test
@@ -336,7 +359,7 @@ public class StashApiClientTest {
     assertThat(comment.getText(), is("Build started"));
 
     verify(
-        postRequestedFor(anyUrl())
+        postRequestedFor(urlEqualTo(pullRequestPostCommentPath()))
             .withBasicAuth(new BasicCredentials("Username", "Password"))
             .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
             .withHeader("Connection", equalTo("close"))
@@ -409,6 +432,11 @@ public class StashApiClientTest {
     assertThat(resp.getCanMerge(), is(true));
     assertThat(resp.getConflicted(), is(true));
     assertThat(resp.getVetoes(), hasSize(2));
+
+    verify(
+        getRequestedFor(urlEqualTo(pullRequestMergeStatusPath()))
+            .withBasicAuth(new BasicCredentials("Username", "Password"))
+            .withHeader("Connection", equalTo("close")));
   }
 
   @Test
@@ -459,7 +487,7 @@ public class StashApiClientTest {
     assertThat(client.mergePullRequest(pullRequestId, mergeVersion).isPresent(), is(false));
 
     verify(
-        postRequestedFor(anyUrl())
+        postRequestedFor(urlEqualTo(pullRequestMergePath(mergeVersion)))
             .withBasicAuth(new BasicCredentials("Username", "Password"))
             .withHeader("Content-Type", absent())
             .withHeader("Connection", equalTo("close"))
