@@ -87,10 +87,6 @@ public class StashRepository {
     this.pollLog = pollLog;
   }
 
-  private static String logTimestamp() {
-    return ZonedDateTime.now().format(TIMESTAMP_FORMATTER);
-  }
-
   public Collection<StashPullRequestResponseValue> getTargetPullRequests() {
     List<StashPullRequestResponseValue> targetPullRequests = new ArrayList<>();
 
@@ -700,14 +696,14 @@ public class StashRepository {
   public void pollRepository() {
     long pollStartTime = System.currentTimeMillis();
     pollLog.resetLog();
-    pollLog.log("{}: poll started", logTimestamp());
+    pollLog.log("{}: poll started", ZonedDateTime.now().format(TIMESTAMP_FORMATTER));
 
     Collection<StashPullRequestResponseValue> targetPullRequests = getTargetPullRequests();
     addFutureBuildTasks(targetPullRequests);
 
     pollLog.log(
         "{}: poll completed in {}",
-        logTimestamp(),
+        ZonedDateTime.now().format(TIMESTAMP_FORMATTER),
         Util.getTimeSpanString(System.currentTimeMillis() - pollStartTime));
   }
 }

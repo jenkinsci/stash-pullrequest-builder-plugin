@@ -34,18 +34,6 @@
   </Match>
 
   <!--
-    Code appears to call the same method on the same object redundantly
-
-    The detected issue is a false positive (a function getting current time when
-    it starts and when it finishes), but it's a sign that the logger should deal
-    with timestamps on its own, one timestamp for every line.
-  -->
-  <Match>
-    <Bug pattern="PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS" />
-    <Class name="stashpullrequestbuilder.stashpullrequestbuilder.StashRepository" />
-  </Match>
-
-  <!--
     Concatenating user-controlled input into a URL
 
     Configurations strings such as the repository name should be validated at
