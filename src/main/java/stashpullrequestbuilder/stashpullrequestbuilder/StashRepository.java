@@ -16,7 +16,8 @@ import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.StringParameterValue;
 import java.lang.invoke.MethodHandles;
-import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -67,6 +68,9 @@ public class StashRepository {
   private static final Pattern ADDITIONAL_PARAMETER_REGEX_PATTERN =
       Pattern.compile(ADDITIONAL_PARAMETER_REGEX);
 
+  private static final DateTimeFormatter TIMESTAMP_FORMATTER =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
+
   private Job<?, ?> job;
   private StashBuildTrigger trigger;
   private StashApiClient client;
@@ -84,7 +88,7 @@ public class StashRepository {
   }
 
   private static String logTimestamp() {
-    return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z").format(new java.util.Date());
+    return ZonedDateTime.now().format(TIMESTAMP_FORMATTER);
   }
 
   public Collection<StashPullRequestResponseValue> getTargetPullRequests() {
