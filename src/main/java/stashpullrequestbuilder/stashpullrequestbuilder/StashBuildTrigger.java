@@ -17,12 +17,14 @@ import hudson.model.queue.Tasks;
 import hudson.security.ACL;
 import hudson.triggers.Trigger;
 import hudson.triggers.TriggerDescriptor;
+import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import java.lang.invoke.MethodHandles;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.ParameterizedJobMixIn.ParameterizedJob;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -100,14 +102,6 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
             Tasks.getDefaultAuthenticationOf(parameterizedJob),
             URIRequirementBuilder.fromUri(stashHost).build()),
         CredentialsMatchers.allOf(CredentialsMatchers.withId(credentialsId)));
-  }
-
-  public String getUsername() {
-    return this.getCredentials().getUsername();
-  }
-
-  public String getPassword() {
-    return this.getCredentials().getPassword().getPlainText();
   }
 
   public String getProjectCode() {
@@ -243,12 +237,23 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
       stashPollingAction = new StashPollingAction(job);
     }
 
+    if (StringUtils.isEmpty(credentialsId)) {
+      stashPollingAction.log("Stash credentials are not set");
+      return;
+    }
+
+    StandardUsernamePasswordCredentials credentials = getCredentials();
+    if (credentials == null) {
+      stashPollingAction.log("No such credentials: \"{}\"", credentialsId);
+      return;
+    }
+
     try {
       StashApiClient stashApiClient =
           new StashApiClient(
               getStashHost(),
-              getUsername(),
-              getPassword(),
+              credentials.getUsername(),
+              credentials.getPassword().getPlainText(),
               getProjectCode(),
               getRepositoryName(),
               getIgnoreSsl());
@@ -327,6 +332,14 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
       req.bindJSON(this, json);
       save();
       return super.configure(req, json);
+    }
+
+    public FormValidation doCheckCredentialsId(@QueryParameter String value) {
+      if (StringUtils.isEmpty(value)) {
+        return FormValidation.error("Credentials cannot be empty");
+      } else {
+        return FormValidation.ok();
+      }
     }
 
     public ListBoxModel doFillCredentialsIdItems(
