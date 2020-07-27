@@ -252,7 +252,7 @@ public class StashApiClient {
       HttpResponse httpResponse = client.execute(request);
       int responseCode = httpResponse.getStatusLine().getStatusCode();
       if (!validResponseCode(responseCode)) {
-        logger.log(Level.SEVERE, "Failing to get response from Stash PR GET" + request.getURI());
+        logger.log(Level.SEVERE, "Failing to get response from Stash PR GET " + request.getURI());
         throw new StashApiException(
             "Didn't get a 200 response from Stash PR GET! Response; '"
                 + responseCode
@@ -319,7 +319,7 @@ public class StashApiClient {
       HttpResponse httpResponse = client.execute(request);
       int responseCode = httpResponse.getStatusLine().getStatusCode();
       if (!validResponseCode(responseCode)) {
-        logger.log(Level.SEVERE, "Failing to get response from Stash PR POST" + request.getURI());
+        logger.log(Level.SEVERE, "Failing to get response from Stash PR POST " + request.getURI());
         throw new StashApiException(
             "Didn't get a 200 response from Stash PR POST! Response; '"
                 + responseCode
