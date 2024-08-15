@@ -160,34 +160,13 @@ public class StashRepository {
     return result;
   }
 
-  Map<String, String> getAdditionalParameters(StashPullRequestResponseValue pullRequest)
-      throws StashApiException {
-    StashPullRequestResponseValueRepository destination = pullRequest.getToRef();
-    String owner = destination.getRepository().getProjectName();
-    String repositoryName = destination.getRepository().getRepositoryName();
-
-    String id = pullRequest.getId();
-    List<StashPullRequestComment> comments =
-        client.getPullRequestComments(owner, repositoryName, id);
-
-    // Process newest comments last so they can override older comments
-    comments.sort(Comparator.naturalOrder());
-
-    Map<String, String> result = new TreeMap<>();
-
-    for (StashPullRequestComment comment : comments) {
-      String content = comment.getText();
-      if (StringUtils.isEmpty(content)) {
-        continue;
-      }
-
-      Map<String, String> parameters = getParametersFromContent(content);
-      for (Map.Entry<String, String> parameter : parameters.entrySet()) {
-        result.put(parameter.getKey(), parameter.getValue());
-      }
+  Map<String, String> getAdditionalParameters(StashPullRequestResponseValue pullRequest) {
+    StashPullRequestComment comment = pullRequest.getBuildCommandComment();
+    if (comment != null) {
+      return getParametersFromContent(comment.getText());
+    } else {
+      return new TreeMap<>();
     }
-
-    return result;
   }
 
   private boolean hasCauseFromTheSamePullRequest(
@@ -284,91 +263,80 @@ public class StashRepository {
 
   void addFutureBuildTasks(Collection<StashPullRequestResponseValue> pullRequests) {
     for (StashPullRequestResponseValue pullRequest : pullRequests) {
-      Map<String, String> additionalParameters;
+      addFutureBuildTasks(pullRequest);
+    }
+  }
 
-      // Get parameter values for the build from the pull request comments.
-      // Failure to do so causes the build to be skipped, as we would not run
-      // the build with incorrect parameters.
+  void addFutureBuildTasks(StashPullRequestResponseValue pullRequest) {
+    Map<String, String> additionalParameters;
+
+    additionalParameters = getAdditionalParameters(pullRequest);
+
+    // Delete comments about previous build results, if that option is
+    // enabled. Run the build even if those comments cannot be deleted.
+    if (trigger.getDeletePreviousBuildFinishComments()) {
       try {
-        additionalParameters = getAdditionalParameters(pullRequest);
+        deletePreviousBuildFinishedComments(pullRequest);
       } catch (StashApiException e) {
         pollLog.log(
-            "Cannot read additional parameters for PR #{}, skipping", pullRequest.getId(), e);
+            "Cannot delete old \"BuildFinished\" comments for PR #{}", pullRequest.getId(), e);
         logger.log(
             Level.INFO,
             format(
-                "%s: cannot read additional parameters for pull request %s, skipping",
-                job.getFullName(), pullRequest.getId()),
+                "%s: cannot delete old \"BuildFinished\" comments for pull request %s",
+                job.getFullName(), pullRequest),
             e);
-        continue;
       }
+    }
 
-      // Delete comments about previous build results, if that option is
-      // enabled. Run the build even if those comments cannot be deleted.
-      if (trigger.getDeletePreviousBuildFinishComments()) {
-        try {
-          deletePreviousBuildFinishedComments(pullRequest);
-        } catch (StashApiException e) {
-          pollLog.log(
-              "Cannot delete old \"BuildFinished\" comments for PR #{}", pullRequest.getId(), e);
-          logger.log(
-              Level.INFO,
-              format(
-                  "%s: cannot delete old \"BuildFinished\" comments for pull request %s",
-                  job.getFullName(), pullRequest),
-              e);
-        }
-      }
+    // Post a comment indicating the build start. Strictly speaking, we are
+    // just adding the build to the queue, it will start after the quiet time
+    // expires and there are executors available. Failure to post the comment
+    // prevents the build for safety reasons. If the plugin cannot post this
+    // comment, chances are it won't be able to post the build results, which
+    // would trigger the build again and again, wasting Jenkins resources.
+    String commentId;
+    try {
+      commentId = postBuildStartCommentTo(pullRequest);
+    } catch (StashApiException e) {
+      pollLog.log(
+          "Cannot post \"BuildStarted\" comment for PR #{}, not building",
+          pullRequest.getId(),
+          e);
+      logger.log(
+          Level.INFO,
+          format(
+              "%s: cannot post Build Start comment for pull request %s, not building",
+              job.getFullName(), pullRequest.getId()),
+          e);
+      return;
+    }
 
-      // Post a comment indicating the build start. Strictly speaking, we are
-      // just adding the build to the queue, it will start after the quiet time
-      // expires and there are executors available. Failure to post the comment
-      // prevents the build for safety reasons. If the plugin cannot post this
-      // comment, chances are it won't be able to post the build results, which
-      // would trigger the build again and again, wasting Jenkins resources.
-      String commentId;
-      try {
-        commentId = postBuildStartCommentTo(pullRequest);
-      } catch (StashApiException e) {
-        pollLog.log(
-            "Cannot post \"BuildStarted\" comment for PR #{}, not building",
+    StashCause cause =
+        new StashCause(
+            trigger.getStashHost(),
+            pullRequest.getFromRef().getBranch().getName(),
+            pullRequest.getToRef().getBranch().getName(),
+            pullRequest.getFromRef().getRepository().getProjectName(),
+            pullRequest.getFromRef().getRepository().getRepositoryName(),
             pullRequest.getId(),
-            e);
-        logger.log(
-            Level.INFO,
-            format(
-                "%s: cannot post Build Start comment for pull request %s, not building",
-                job.getFullName(), pullRequest.getId()),
-            e);
-        continue;
-      }
+            pullRequest.getToRef().getRepository().getProjectName(),
+            pullRequest.getToRef().getRepository().getRepositoryName(),
+            pullRequest.getTitle(),
+            pullRequest.getFromRef().getLatestCommit(),
+            pullRequest.getToRef().getLatestCommit(),
+            commentId,
+            pullRequest.getVersion(),
+            additionalParameters);
 
-      StashCause cause =
-          new StashCause(
-              trigger.getStashHost(),
-              pullRequest.getFromRef().getBranch().getName(),
-              pullRequest.getToRef().getBranch().getName(),
-              pullRequest.getFromRef().getRepository().getProjectName(),
-              pullRequest.getFromRef().getRepository().getRepositoryName(),
-              pullRequest.getId(),
-              pullRequest.getToRef().getRepository().getProjectName(),
-              pullRequest.getToRef().getRepository().getRepositoryName(),
-              pullRequest.getTitle(),
-              pullRequest.getFromRef().getLatestCommit(),
-              pullRequest.getToRef().getLatestCommit(),
-              commentId,
-              pullRequest.getVersion(),
-              additionalParameters);
-
-      Queue.Item item = startJob(cause);
-      if (item != null) {
-        pollLog.log("Queued job for PR #{}", pullRequest.getId());
-        logger.info(format("%s: queued job for PR #%s", job.getFullName(), pullRequest.getId()));
-      } else {
-        pollLog.log("Failed to queue job for PR #{}", pullRequest.getId());
-        logger.warning(
-            format("%s: failed to queue job for PR #%s", job.getFullName(), pullRequest.getId()));
-      }
+    Queue.Item item = startJob(cause);
+    if (item != null) {
+      pollLog.log("Queued job for PR #{}", pullRequest.getId());
+      logger.info(format("%s: queued job for PR #%s", job.getFullName(), pullRequest.getId()));
+    } else {
+      pollLog.log("Failed to queue job for PR #{}", pullRequest.getId());
+      logger.warning(
+          format("%s: failed to queue job for PR #%s", job.getFullName(), pullRequest.getId()));
     }
   }
 
@@ -527,12 +495,9 @@ public class StashRepository {
   }
 
   private boolean isBuildTarget(StashPullRequestResponseValue pullRequest) {
-
     if (!"OPEN".equals(pullRequest.getState())) {
       return false;
     }
-
-    boolean shouldBuild = true;
 
     if (isSkipBuild(pullRequest.getTitle())) {
       pollLog.log("Not building PR #{}, its title contains the skip phrase", pullRequest.getId());
@@ -567,10 +532,6 @@ public class StashRepository {
     }
 
     boolean isOnlyBuildOnComment = trigger.getOnlyBuildOnComment();
-
-    if (isOnlyBuildOnComment) {
-      shouldBuild = false;
-    }
 
     String sourceCommit = pullRequest.getFromRef().getLatestCommit();
 
@@ -615,8 +576,7 @@ public class StashRepository {
         // in build only on comment, we should stop parsing comments as soon as a PR builder
         // comment is found.
         if (isOnlyBuildOnComment) {
-          assert !shouldBuild;
-          break;
+          return false;
         }
 
         String sourceCommitMatch;
@@ -638,23 +598,18 @@ public class StashRepository {
               && (!destinationCommitMatch.equalsIgnoreCase(destinationCommit))) {
             continue;
           }
-
-          shouldBuild = false;
-          break;
+          return false;
         }
       }
-
       if (isSkipBuild(content)) {
-        shouldBuild = false;
-        break;
+        return false;
       }
       if (isPhrasesContain(content, this.trigger.getCiBuildPhrases())) {
-        shouldBuild = true;
-        break;
+        pullRequest.setBuildCommandComment(comment);
+        return true;
       }
     }
-
-    return shouldBuild;
+    return !isOnlyBuildOnComment;
   }
 
   private boolean isForTargetBranch(StashPullRequestResponseValue pullRequest) {

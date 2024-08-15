@@ -11,6 +11,13 @@ public class StashPullRequestComment implements Comparable<StashPullRequestComme
   private Integer commentId;
   private String text;
 
+  public StashPullRequestComment() {}
+
+  public StashPullRequestComment(Integer commentId, String text) {
+    this.commentId = commentId;
+    this.text = text;
+  }
+
   @JsonProperty("id")
   public Integer getCommentId() {
     return commentId;

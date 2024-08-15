@@ -312,18 +312,46 @@ public class StashRepositoryTest {
   }
 
   @Test
-  public void getAdditionalParameters_uses_newest_parameter_definition() throws Exception {
-    StashPullRequestComment comment1 = new StashPullRequestComment();
-    comment1.setCommentId(1);
-    comment1.setText("p:key=value1");
-
-    StashPullRequestComment comment2 = new StashPullRequestComment();
-    comment2.setCommentId(2);
-    comment2.setText("p:key=value2");
-
+  public void getAdditionalParameters_resets_parameters_if_none_specified_in_build_command() throws Exception {
+    StashPullRequestComment comment1 = new StashPullRequestComment(1, "DO TEST\np:key1=value1\np:key2=value2");
+    StashPullRequestComment comment2 = new StashPullRequestComment(2, "DO TEST");
     List<StashPullRequestComment> comments = Arrays.asList(comment1, comment2);
     when(stashApiClient.getPullRequestComments(any(), any(), any())).thenReturn(comments);
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
+    when(trigger.getCiBuildPhrases()).thenReturn("DO TEST");
 
+    stashRepository.getTargetPullRequests();
+    Map<String, String> parameters = stashRepository.getAdditionalParameters(pullRequest);
+
+    assertThat(parameters, is(aMapWithSize(0)));
+  }
+
+  @Test
+  public void getAdditionalParameters_ignores_parameter_definitions_before_build_command() throws Exception {
+    StashPullRequestComment comment1 = new StashPullRequestComment(1, "DO TEST\np:key1=value1");
+    StashPullRequestComment comment2 = new StashPullRequestComment(2, "DO TEST\np:key2=value2");
+    List<StashPullRequestComment> comments = Arrays.asList(comment1, comment2);
+    when(stashApiClient.getPullRequestComments(any(), any(), any())).thenReturn(comments);
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
+    when(trigger.getCiBuildPhrases()).thenReturn("DO TEST");
+
+    stashRepository.getTargetPullRequests();
+    Map<String, String> parameters = stashRepository.getAdditionalParameters(pullRequest);
+
+    assertThat(parameters, is(aMapWithSize(1)));
+    assertThat(parameters, hasEntry("key2", "value2"));
+  }
+
+  @Test
+  public void getAdditionalParameters_uses_newest_parameter_definition() throws Exception {
+    StashPullRequestComment comment1 = new StashPullRequestComment(1, "DO TEST\np:key=value1");
+    StashPullRequestComment comment2 = new StashPullRequestComment(2, "DO TEST\np:key=value2");
+    List<StashPullRequestComment> comments = Arrays.asList(comment1, comment2);
+    when(stashApiClient.getPullRequestComments(any(), any(), any())).thenReturn(comments);
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
+    when(trigger.getCiBuildPhrases()).thenReturn("DO TEST");
+
+    stashRepository.getTargetPullRequests();
     Map<String, String> parameters = stashRepository.getAdditionalParameters(pullRequest);
 
     assertThat(parameters, is(aMapWithSize(1)));
@@ -333,17 +361,14 @@ public class StashRepositoryTest {
   @Test
   public void getAdditionalParameters_uses_newest_parameter_definition_regardless_of_list_order()
       throws Exception {
-    StashPullRequestComment comment1 = new StashPullRequestComment();
-    comment1.setCommentId(1);
-    comment1.setText("p:key=value1");
-
-    StashPullRequestComment comment2 = new StashPullRequestComment();
-    comment2.setCommentId(2);
-    comment2.setText("p:key=value2");
-
+    StashPullRequestComment comment1 = new StashPullRequestComment(1, "DO TEST\np:key=value1");
+    StashPullRequestComment comment2 = new StashPullRequestComment(2, "DO TEST\np:key=value2");
     List<StashPullRequestComment> comments = Arrays.asList(comment2, comment1);
     when(stashApiClient.getPullRequestComments(any(), any(), any())).thenReturn(comments);
+    when(stashApiClient.getPullRequests()).thenReturn(pullRequestList);
+    when(trigger.getCiBuildPhrases()).thenReturn("DO TEST");
 
+    stashRepository.getTargetPullRequests();
     Map<String, String> parameters = stashRepository.getAdditionalParameters(pullRequest);
 
     assertThat(parameters, is(aMapWithSize(1)));
@@ -561,16 +586,5 @@ public class StashRepositoryTest {
         .thenThrow(new StashApiException("cannot read PR comments"));
 
     assertThat(stashRepository.getTargetPullRequests(), is(empty()));
-  }
-
-  @Test
-  public void addFutureBuildTasks_skips_scheduling_build_if_getPullRequestComments_throws()
-      throws Exception {
-    when(stashApiClient.getPullRequestComments(any(), any(), any()))
-        .thenThrow(new StashApiException("cannot read PR comments"));
-
-    stashRepository.addFutureBuildTasks(pullRequestList);
-
-    assertThat(Jenkins.getInstance().getQueue().getItems(), is(emptyArray()));
   }
 }
