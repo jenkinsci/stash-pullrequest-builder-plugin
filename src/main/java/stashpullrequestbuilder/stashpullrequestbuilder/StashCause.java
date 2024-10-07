@@ -1,8 +1,12 @@
 package stashpullrequestbuilder.stashpullrequestbuilder;
 
 import hudson.model.Cause;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.TreeMap;
+import org.owasp.esapi.Encoder;
+import org.owasp.esapi.reference.DefaultEncoder;
 
 /** Created by Nathan McCarthy */
 public class StashCause extends Cause {
@@ -133,18 +137,38 @@ public class StashCause extends Cause {
 
   @Override
   public String getShortDescription() {
-    return "<a href=\""
-        + stashHost
-        + "/projects/"
-        + this.getDestinationRepositoryOwner()
-        + "/repos/"
-        + this.getDestinationRepositoryName()
-        + "/pull-requests/"
-        + this.getPullRequestId()
-        + "\" >PR #"
-        + this.getPullRequestId()
-        + " "
-        + this.getPullRequestTitle()
-        + " </a>";
+    return "<a href='" + getEscapedUrl() + "'>" + getEscapedDescription() + " </a>";
+  }
+
+  String getEscapedUrl() {
+    return getEncoder().encodeForHTMLAttribute(getPrUrl().toASCIIString());
+  }
+
+  String getEscapedDescription() {
+    return getEncoder()
+        .encodeForHTML("PR #" + this.getPullRequestId() + " " + this.getPullRequestTitle());
+  }
+
+  URI getPrUrl() {
+    try {
+      return new URI(stashHost)
+          .resolve(
+              new URI(
+                  null,
+                  null,
+                  "/projects/"
+                      + this.getDestinationRepositoryOwner()
+                      + "/repos/"
+                      + this.getDestinationRepositoryName()
+                      + "/pull-requests/"
+                      + this.getPullRequestId(),
+                  null));
+    } catch (URISyntaxException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  private static Encoder getEncoder() {
+    return DefaultEncoder.getInstance();
   }
 }
