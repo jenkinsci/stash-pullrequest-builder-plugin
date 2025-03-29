@@ -4,7 +4,8 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>3.53</version>
+    <version>4.88</version>
+    <relativePath></relativePath>
   </parent>
 
   <artifactId>stash-pullrequest-builder</artifactId>
@@ -15,26 +16,8 @@
   <description>This plugin builds Stash pull requests and posts the build results on Stash</description>
   <url>https://github.com/jenkinsci/stash-pullrequest-builder-plugin</url>
 
-  <developers>
-    <developer>
-      <id>nemccarthy</id>
-      <name>Nathan McCarthy</name>
-      <email>nem@nemccarthy.me</email>
-    </developer>
-    <developer>
-      <id>jimklimov</id>
-      <name>Jim Klimov</name>
-      <email>jimklimov@gmail.com</email>
-    </developer>
-    <developer>
-      <id>jbochenski</id>
-      <name>Jakub Bocheński</name>
-      <email>kuba.bochenski+stash-pullrequest-builder-plugin@gmail.com</email>
-    </developer>
-  </developers>
-
   <scm>
-    <connection>scm:git:ssh://github.com/jenkinsci/stash-pullrequest-builder-plugin.git</connection>
+    <connection>scm:git:https://github.com/jenkinsci/stash-pullrequest-builder-plugin.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/jenkinsci/stash-pullrequest-builder-plugin.git</developerConnection>
     <tag>${scmTag}</tag>
     <url>https://github.com/jenkinsci/stash-pullrequest-builder-plugin</url>
@@ -56,8 +39,10 @@
   <properties>
     <revision>1.18</revision>
     <changelist>-SNAPSHOT</changelist>
-    <java.level>8</java.level>
-    <jenkins.version>2.60.3</jenkins.version>
+    <!-- https://www.jenkins.io/doc/developer/plugin-development/choosing-jenkins-baseline/ -->
+    <jenkins.baseline>2.462</jenkins.baseline>
+    <jenkins.version>${jenkins.baseline}.3</jenkins.version>
+    <slf4jVersion>1.7.25</slf4jVersion>
     <spotbugs.effort>Max</spotbugs.effort>
     <spotbugs.threshold>Low</spotbugs.threshold>
   </properties>
@@ -65,10 +50,11 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>4.13</version>
-        <scope>test</scope>
+        <groupId>io.jenkins.tools.bom</groupId>
+        <artifactId>bom-${jenkins.baseline}.x</artifactId>
+        <version>4228.v0a_71308d905b_</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -77,22 +63,18 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>jackson2-api</artifactId>
-      <version>2.9.9.1</version>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>credentials</artifactId>
-      <version>2.1.5</version>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>apache-httpcomponents-client-4-api</artifactId>
-      <version>4.5.5-3.0</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>${slf4jVersion}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -109,7 +91,6 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins.workflow</groupId>
       <artifactId>workflow-job</artifactId>
-      <version>2.9</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
