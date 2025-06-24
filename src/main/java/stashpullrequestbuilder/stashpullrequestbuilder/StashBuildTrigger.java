@@ -35,7 +35,7 @@ import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 import stashpullrequestbuilder.stashpullrequestbuilder.stash.StashApiClient;
 
 /** Created by Nathan McCarthy */
@@ -376,7 +376,7 @@ public class StashBuildTrigger extends Trigger<Job<?, ?>> {
     }
 
     @Override
-    public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
+    public boolean configure(StaplerRequest2 req, JSONObject json) throws FormException {
       enablePipelineSupport = false;
 
       req.bindJSON(this, json);

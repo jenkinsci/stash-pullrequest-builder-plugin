@@ -15,10 +15,10 @@ import hudson.model.FreeStyleProject;
 import hudson.util.FormValidation;
 import hudson.util.FormValidation.Kind;
 import hudson.util.Secret;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Collections;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
 import net.sf.json.JSONObject;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.junit.Rule;
@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.kohsuke.stapler.RequestImpl;
 import org.kohsuke.stapler.Stapler;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.WebApp;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -48,7 +48,7 @@ public class StashBuildTriggerTest {
   @Rule public JenkinsRule jenkinsRule = new JenkinsRule();
   @Rule public MockitoRule rule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
 
-  private StaplerRequest makeStaplerRequest() {
+  private StaplerRequest2 makeStaplerRequest() {
     ServletContext servletContext = mock(ServletContext.class);
     WebApp webApp = new WebApp(servletContext);
 
@@ -64,7 +64,7 @@ public class StashBuildTriggerTest {
   public void pipeline_jobs_not_supported_by_default() throws Exception {
     JSONObject json = new JSONObject();
 
-    StaplerRequest staplerRequest = makeStaplerRequest();
+    StaplerRequest2 staplerRequest = makeStaplerRequest();
     descriptor.configure(staplerRequest, json);
 
     FreeStyleProject project = jenkinsRule.createFreeStyleProject();
@@ -79,7 +79,7 @@ public class StashBuildTriggerTest {
     JSONObject json = new JSONObject();
     json.put("enablePipelineSupport", "false");
 
-    StaplerRequest staplerRequest = makeStaplerRequest();
+    StaplerRequest2 staplerRequest = makeStaplerRequest();
     descriptor.configure(staplerRequest, json);
 
     FreeStyleProject project = jenkinsRule.createFreeStyleProject();
@@ -94,7 +94,7 @@ public class StashBuildTriggerTest {
     JSONObject json = new JSONObject();
     json.put("enablePipelineSupport", "true");
 
-    StaplerRequest staplerRequest = makeStaplerRequest();
+    StaplerRequest2 staplerRequest = makeStaplerRequest();
     descriptor.configure(staplerRequest, json);
 
     FreeStyleProject project = jenkinsRule.createFreeStyleProject();
